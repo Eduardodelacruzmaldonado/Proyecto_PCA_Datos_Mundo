@@ -1,0 +1,846 @@
+{
+ "n_paises": 227,
+ "n_columnas": 19,
+ "regiones": {
+  "SUB-SAHARAN AFRICA": 51,
+  "LATIN AMER. & CARIB": 45,
+  "ASIA (EX. NEAR EAST)": 28,
+  "WESTERN EUROPE": 28,
+  "OCEANIA": 21,
+  "NEAR EAST": 16,
+  "EASTERN EUROPE": 12,
+  "C.W. OF IND. STATES": 12,
+  "NORTHERN AFRICA": 6,
+  "NORTHERN AMERICA": 5,
+  "BALTICS": 3
+ },
+ "clima": {
+  "1": 29,
+  "1.5": 8,
+  "2": 111,
+  "2.5": 3,
+  "3": 48,
+  "4": 6,
+  "s/d": 22
+ },
+ "faltantes": {
+  "Climate": [
+   22,
+   9.691629955947137
+  ],
+  "Literacy (%)": [
+   18,
+   7.929515418502203
+  ],
+  "Industry": [
+   16,
+   7.048458149779735
+  ],
+  "Service": [
+   15,
+   6.607929515418502
+  ],
+  "Agriculture": [
+   15,
+   6.607929515418502
+  ],
+  "Deathrate": [
+   4,
+   1.7621145374449338
+  ],
+  "Phones (per 1000)": [
+   4,
+   1.7621145374449338
+  ],
+  "Birthrate": [
+   3,
+   1.3215859030837005
+  ],
+  "Infant mortality (per 1000 births)": [
+   3,
+   1.3215859030837005
+  ],
+  "Net migration": [
+   3,
+   1.3215859030837005
+  ],
+  "Arable (%)": [
+   2,
+   0.8810572687224669
+  ],
+  "Crops (%)": [
+   2,
+   0.8810572687224669
+  ],
+  "Other (%)": [
+   2,
+   0.8810572687224669
+  ],
+  "GDP ($ per capita)": [
+   1,
+   0.44052863436123346
+  ]
+ },
+ "suma_suelo": [
+  99.88,
+  100.01
+ ],
+ "suma_sectores": [
+  0.9059999999999999,
+  1.01
+ ],
+ "corr_industria": [
+  -0.32290896708555444,
+  -0.5445940699994951
+ ],
+ "asim_tamano": [
+  9.200223032094938,
+  5.964245000049949
+ ],
+ "eliminados": [
+  "Mayotte",
+  "Wallis and Futuna",
+  "Western Sahara"
+ ],
+ "n_depurados": 224,
+ "imputados": {
+  "Literacy (%)": 16,
+  "Service": 13,
+  "Agriculture": 12,
+  "Phones (per 1000)": 3,
+  "Deathrate": 2,
+  "Net migration": 1,
+  "Arable (%)": 1,
+  "Crops (%)": 1,
+  "Infant mortality (per 1000 births)": 1,
+  "Birthrate": 1
+ },
+ "a_log": [
+  "Pop. Density (per sq. mi.)",
+  "Coastline (coast/area ratio)",
+  "Crops (%)"
+ ],
+ "asim_log": {
+  "Pop. Density (per sq. mi.)": [
+   8.231809814974529,
+   0.3175358531232933
+  ],
+  "Coastline (coast/area ratio)": [
+   8.193629346585913,
+   1.1445237413887788
+  ],
+  "Crops (%)": [
+   3.317298844639487,
+   0.881250294414923
+  ]
+ },
+ "ceros_migracion": 62,
+ "top3": {
+  "Population": [
+   "China",
+   "India",
+   "United States"
+  ],
+  "Area (sq. mi.)": [
+   "Russia",
+   "Canada",
+   "United States"
+  ],
+  "Pop. Density (per sq. mi.)": [
+   "Monaco",
+   "Macau",
+   "Singapore"
+  ],
+  "Coastline (coast/area ratio)": [
+   "Micronesia, Fed. St.",
+   "Palau",
+   "N. Mariana Islands"
+  ],
+  "Net migration": [
+   "Afghanistan",
+   "Cayman Islands",
+   "Qatar"
+  ],
+  "Infant mortality (per 1000 births)": [
+   "Angola",
+   "Afghanistan",
+   "Sierra Leone"
+  ],
+  "GDP ($ per capita)": [
+   "Luxembourg",
+   "Norway",
+   "United States"
+  ],
+  "Literacy (%)": [
+   "Andorra",
+   "Australia",
+   "Finland"
+  ],
+  "Phones (per 1000)": [
+   "Monaco",
+   "United States",
+   "Gibraltar"
+  ],
+  "Arable (%)": [
+   "Bangladesh",
+   "Ukraine",
+   "Moldova"
+  ],
+  "Crops (%)": [
+   "Kiribati",
+   "Sao Tome & Principe",
+   "Micronesia, Fed. St."
+  ],
+  "Other (%)": [
+   "Anguilla",
+   "Gibraltar",
+   "Greenland"
+  ],
+  "Birthrate": [
+   "Niger",
+   "Mali",
+   "Uganda"
+  ],
+  "Deathrate": [
+   "Swaziland",
+   "Botswana",
+   "Lesotho"
+  ],
+  "Agriculture": [
+   "Liberia",
+   "Somalia",
+   "Guinea-Bissau"
+  ],
+  "Industry": [
+   "Equatorial Guinea",
+   "Qatar",
+   "Iraq"
+  ],
+  "Service": [
+   "Cayman Islands",
+   "Jersey",
+   "Macau"
+  ]
+ },
+ "clave_cov": [
+  "GDP ($ per capita)",
+  "Infant mortality (per 1000 births)",
+  "Literacy (%)",
+  "Phones (per 1000)",
+  "Birthrate"
+ ],
+ "atipicos": {
+  "Pop. Density (per sq. mi.)": [
+   20,
+   7,
+   [
+    "Monaco",
+    "Macau",
+    "Singapore"
+   ]
+  ],
+  "Coastline (coast/area ratio)": [
+   37,
+   1,
+   [
+    "Micronesia, Fed. St.",
+    "Palau",
+    "N. Mariana Islands"
+   ]
+  ],
+  "Net migration": [
+   50,
+   50,
+   [
+    "Afghanistan",
+    "Micronesia, Fed. St.",
+    "American Samoa"
+   ]
+  ],
+  "Infant mortality (per 1000 births)": [
+   5,
+   5,
+   [
+    "Angola",
+    "Afghanistan",
+    "Sierra Leone"
+   ]
+  ],
+  "GDP ($ per capita)": [
+   3,
+   3,
+   [
+    "Luxembourg",
+    "Norway",
+    "United States"
+   ]
+  ],
+  "Literacy (%)": [
+   16,
+   16,
+   [
+    "Niger",
+    "Burkina Faso",
+    "Sierra Leone"
+   ]
+  ],
+  "Phones (per 1000)": [
+   1,
+   1,
+   [
+    "Monaco"
+   ]
+  ],
+  "Arable (%)": [
+   10,
+   10,
+   [
+    "Bangladesh",
+    "Ukraine",
+    "Moldova"
+   ]
+  ],
+  "Crops (%)": [
+   28,
+   0,
+   [
+    "Kiribati",
+    "Sao Tome & Principe",
+    "Micronesia, Fed. St."
+   ]
+  ],
+  "Birthrate": [
+   0,
+   0,
+   []
+  ],
+  "Deathrate": [
+   16,
+   16,
+   [
+    "Swaziland",
+    "Botswana",
+    "Lesotho"
+   ]
+  ],
+  "Agriculture": [
+   7,
+   7,
+   [
+    "Liberia",
+    "Somalia",
+    "Guinea-Bissau"
+   ]
+  ],
+  "Service": [
+   1,
+   1,
+   [
+    "Equatorial Guinea"
+   ]
+  ]
+ },
+ "var_pib_trans": 101501162.71620761,
+ "pares_top": [
+  [
+   "Infant mortality (per 1000 births)",
+   "Birthrate",
+   0.8460582661358543
+  ],
+  [
+   "GDP ($ per capita)",
+   "Phones (per 1000)",
+   0.8316277641314421
+  ],
+  [
+   "Literacy (%)",
+   "Birthrate",
+   -0.780963530200482
+  ],
+  [
+   "Infant mortality (per 1000 births)",
+   "Literacy (%)",
+   -0.7700337654990894
+  ],
+  [
+   "Phones (per 1000)",
+   "Birthrate",
+   -0.7213805063145099
+  ],
+  [
+   "Infant mortality (per 1000 births)",
+   "Agriculture",
+   0.7065480957856056
+  ],
+  [
+   "Birthrate",
+   "Agriculture",
+   0.6748510220434836
+  ],
+  [
+   "Phones (per 1000)",
+   "Service",
+   0.6712801993109943
+  ]
+ ],
+ "pares_bottom": [
+  [
+   "Crops (%)",
+   "Service",
+   0.005483146331633868
+  ],
+  [
+   "Net migration",
+   "Literacy (%)",
+   -0.009430971725480563
+  ],
+  [
+   "GDP ($ per capita)",
+   "Arable (%)",
+   0.018993612949219404
+  ],
+  [
+   "Arable (%)",
+   "Agriculture",
+   -0.021923402671200156
+  ],
+  [
+   "Coastline (coast/area ratio)",
+   "Net migration",
+   -0.02732645458267157
+  ],
+  [
+   "Net migration",
+   "Infant mortality (per 1000 births)",
+   -0.029870041852058448
+  ],
+  [
+   "Net migration",
+   "Deathrate",
+   0.03538541840402934
+  ],
+  [
+   "Literacy (%)",
+   "Crops (%)",
+   0.05070135389678652
+  ]
+ ],
+ "n_pares": 78,
+ "n_pares_05": 23,
+ "n_pares_08": 2,
+ "mayor_corr": {
+  "Pop. Density (per sq. mi.)": [
+   0.4762288580058396,
+   "Coastline (coast/area ratio)"
+  ],
+  "Coastline (coast/area ratio)": [
+   0.5151277167353172,
+   "Service"
+  ],
+  "Net migration": [
+   0.3887741552356841,
+   "GDP ($ per capita)"
+  ],
+  "Infant mortality (per 1000 births)": [
+   0.8460582661358543,
+   "Birthrate"
+  ],
+  "GDP ($ per capita)": [
+   0.8316277641314421,
+   "Phones (per 1000)"
+  ],
+  "Literacy (%)": [
+   0.780963530200482,
+   "Birthrate"
+  ],
+  "Phones (per 1000)": [
+   0.8316277641314421,
+   "GDP ($ per capita)"
+  ],
+  "Arable (%)": [
+   0.3588152440944999,
+   "Pop. Density (per sq. mi.)"
+  ],
+  "Crops (%)": [
+   0.37866009961482333,
+   "Net migration"
+  ],
+  "Birthrate": [
+   0.8460582661358543,
+   "Infant mortality (per 1000 births)"
+  ],
+  "Deathrate": [
+   0.6578088152520607,
+   "Infant mortality (per 1000 births)"
+  ],
+  "Agriculture": [
+   0.7065480957856056,
+   "Infant mortality (per 1000 births)"
+  ],
+  "Service": [
+   0.6712801993109943,
+   "Phones (per 1000)"
+  ]
+ },
+ "r_crit": 0.13112325202601782,
+ "n_no_signif": 21,
+ "top4": [
+  "Birthrate",
+  "Infant mortality (per 1000 births)",
+  "Agriculture",
+  "Literacy (%)"
+ ],
+ "top4_puntaje": 0.7291824383701598,
+ "grupos_4": [
+  [
+   0.7291824383701598,
+   [
+    "Infant mortality (per 1000 births)",
+    "Literacy (%)",
+    "Birthrate",
+    "Agriculture"
+   ]
+  ],
+  [
+   0.7286590226880664,
+   [
+    "Infant mortality (per 1000 births)",
+    "Literacy (%)",
+    "Phones (per 1000)",
+    "Birthrate"
+   ]
+  ],
+  [
+   0.7181512721268257,
+   [
+    "Infant mortality (per 1000 births)",
+    "GDP ($ per capita)",
+    "Phones (per 1000)",
+    "Birthrate"
+   ]
+  ],
+  [
+   0.7027925784179935,
+   [
+    "Infant mortality (per 1000 births)",
+    "Phones (per 1000)",
+    "Birthrate",
+    "Agriculture"
+   ]
+  ]
+ ],
+ "bottom2": [
+  "Arable (%)",
+  "Net migration"
+ ],
+ "intensidad": {
+  "Arable (%)": 0.12134654246215731,
+  "Net migration": 0.13217986482767216,
+  "Crops (%)": 0.18240807911776072,
+  "Pop. Density (per sq. mi.)": 0.27610977650075774,
+  "Deathrate": 0.2981970871112461,
+  "Coastline (coast/area ratio)": 0.30974080551115635,
+  "Literacy (%)": 0.3968709168503432,
+  "Agriculture": 0.4037947958980314,
+  "Service": 0.4130648812596562,
+  "GDP ($ per capita)": 0.41913548163362296,
+  "Birthrate": 0.45813616085294395,
+  "Phones (per 1000)": 0.46600544559251844,
+  "Infant mortality (per 1000 births)": 0.4842752562499424
+ },
+ "verificacion_sklearn": true,
+ "cov_igual_corr": true,
+ "val_z": [
+  5.567351424911937,
+  1.949721087324599,
+  1.2850120597789745,
+  1.172300451887405,
+  0.7463140265336954,
+  0.48617660422901643,
+  0.42549073629433426,
+  0.38916488012366085,
+  0.3689730301505435,
+  0.23340525933502046,
+  0.17065506667537123,
+  0.12128834137345296,
+  0.08414703138199142
+ ],
+ "prop_z": [
+  0.4282578019163028,
+  0.1499785451788153,
+  0.09884708152145956,
+  0.09017695783749267,
+  0.057408771271822714,
+  0.03739820032530895,
+  0.03273005663802571,
+  0.02993576000951237,
+  0.028382540780811035,
+  0.017954250718078494,
+  0.0131273128211824,
+  0.009329872413342533,
+  0.0064728485678454935
+ ],
+ "acum_z": [
+  0.4282578019163028,
+  0.5782363470951181,
+  0.6770834286165777,
+  0.7672603864540704,
+  0.8246691577258931,
+  0.862067358051202,
+  0.8947974146892278,
+  0.9247331746987402,
+  0.9531157154795512,
+  0.9710699661976298,
+  0.9841972790188122,
+  0.9935271514321546,
+  1.0000000000000002
+ ],
+ "horn": [
+  1.5163588040984806,
+  1.387438818683877,
+  1.2878260014980518,
+  1.2137668621531692,
+  1.1513591202641535,
+  1.084896679322328,
+  1.0201631525013832,
+  0.9736149538496006,
+  0.9167734397198647,
+  0.8649285151958174,
+  0.8156678485558249,
+  0.7547437863886788,
+  0.6949141181781712
+ ],
+ "horn_media": [
+  1.419933680893409,
+  1.3133421216949244,
+  1.2316035466794164,
+  1.164009144347881,
+  1.1007626060280056,
+  1.0399897890544492,
+  0.983030106697416,
+  0.9301737444401943,
+  0.8754876362089108,
+  0.8229057539938013,
+  0.7701020683180977,
+  0.7100001818263744,
+  0.6386596198171198
+ ],
+ "k_kaiser": 4,
+ "k_horn": 2,
+ "k_horn_media": 4,
+ "k_80": 5,
+ "k": 4,
+ "horn_supera": [
+  0.0,
+  0.0,
+  0.064,
+  0.38,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0
+ ],
+ "ruido_mayor_1": 6.178,
+ "cov_entre_cp": 3.3306690738754696e-15,
+ "cargas": {
+  "Pop. Density (per sq. mi.)": [
+   0.4256629283212922,
+   0.4547252903841003,
+   0.5676420735191379,
+   0.33720690603923154,
+   -0.03956360595578778,
+   -0.07642613705529305
+  ],
+  "Coastline (coast/area ratio)": [
+   0.5273757645289304,
+   0.3557222929183066,
+   -0.09525570369738774,
+   0.6390935865258246,
+   0.23283547383074715,
+   -0.12450972487084706
+  ],
+  "Net migration": [
+   0.17004841037301932,
+   -0.5863105929406558,
+   0.4250342512130749,
+   0.32339625707725506,
+   -0.48608540496500746,
+   -0.061172454079624426
+  ],
+  "Infant mortality (per 1000 births)": [
+   -0.9080127991123623,
+   -0.11228783430009576,
+   0.17903121739872543,
+   0.1742314681125235,
+   0.15787985115001357,
+   0.03278509465537674
+  ],
+  "GDP ($ per capita)": [
+   0.7663850358527557,
+   -0.42045826939780767,
+   0.18513129163813463,
+   0.01552682468869256,
+   0.04965422355794304,
+   -0.06294678737497324
+  ],
+  "Literacy (%)": [
+   0.7885543644445185,
+   0.036628285086282915,
+   -0.20355706633913936,
+   -0.28263650991915945,
+   0.06517352195870801,
+   -0.31459671935072026
+  ],
+  "Phones (per 1000)": [
+   0.8530069717229836,
+   -0.24082529735534805,
+   0.16078173178280683,
+   0.07903514828444935,
+   0.2047112386871016,
+   -0.08490678139956916
+  ],
+  "Arable (%)": [
+   0.11029893194014313,
+   0.3710721098738999,
+   0.6926429493403724,
+   -0.5207051333658732,
+   -0.03952951850522832,
+   0.10707846331242578
+  ],
+  "Crops (%)": [
+   0.011050955029899367,
+   0.8659269073899388,
+   0.0334604308858938,
+   -0.011359962914100774,
+   -0.057161508014466005,
+   -0.03628603759057704
+  ],
+  "Birthrate": [
+   -0.8716105891026437,
+   0.05375753941499722,
+   0.01603503444134338,
+   0.31100280443292094,
+   -0.019390866497798722,
+   0.17947806440891353
+  ],
+  "Deathrate": [
+   -0.5463041276202542,
+   -0.34664438289209554,
+   0.3795239334901586,
+   -0.09442111408136822,
+   0.5806281343460055,
+   -0.07979773554300403
+  ],
+  "Agriculture": [
+   -0.7908456046582614,
+   0.11435341263773495,
+   0.11738115625127887,
+   0.1311721604032946,
+   -0.008783076283715382,
+   -0.3572484901827395
+  ],
+  "Service": [
+   0.7886512056456404,
+   0.016203194132486425,
+   0.02251723584084691,
+   0.18636376611962663,
+   0.1957020718834572,
+   0.4133817599786401
+  ]
+ },
+ "media_grupo_cp1": {
+  "Europa": 2.2121377764559513,
+  "América": 1.0515020647007858,
+  "Oceanía": 0.6117365342496024,
+  "Asia y Cercano Oriente": -0.05545309483914282,
+  "CEI": -0.6105938300506547,
+  "África": -2.730267203165583
+ },
+ "cp1_altos": [
+  "Bermuda",
+  "Cayman Islands",
+  "Hong Kong"
+ ],
+ "cp1_bajos": [
+  "Liberia",
+  "Sierra Leone",
+  "Somalia"
+ ],
+ "largo_circulo": {
+  "Birthrate": 0.8732667931851139,
+  "Infant mortality (per 1000 births)": 0.914929396775332,
+  "Agriculture": 0.7990703807482712,
+  "Literacy (%)": 0.7894045964857695,
+  "Arable (%)": 0.3871180247849536,
+  "Net migration": 0.6104724181032376
+ },
+ "par_fuerte": [
+  "Birthrate",
+  "Infant mortality (per 1000 births)",
+  0.8460582661358543
+ ],
+ "r_bottom2": -0.05725433640728572,
+ "r_bottom2_con_top4": 0.19342512138801082,
+ "fuera_z": 0,
+ "peso_pib": 0.999471859882789,
+ "prop_s": [
+  0.9998296792517597,
+  0.00015860579844249458,
+  8.261589078089235e-06,
+  1.6594412158204891e-06,
+  1.2690592198288976e-06,
+  2.370633269526049e-07,
+  1.810910550985796e-07,
+  9.89343351568635e-08,
+  4.936321657237002e-09,
+  1.6146699670171659e-09,
+  1.0158691601387745e-09,
+  1.3437175958925057e-10,
+  7.033409385397378e-11
+ ],
+ "k_80_s": 1,
+ "vec_s_pib": 0.9998210154514532,
+ "r_cp1": 0.7664806585870293,
+ "n_cargas_05": 9,
+ "VARS": [
+  "Pop. Density (per sq. mi.)",
+  "Coastline (coast/area ratio)",
+  "Net migration",
+  "Infant mortality (per 1000 births)",
+  "GDP ($ per capita)",
+  "Literacy (%)",
+  "Phones (per 1000)",
+  "Arable (%)",
+  "Crops (%)",
+  "Birthrate",
+  "Deathrate",
+  "Agriculture",
+  "Service"
+ ],
+ "NOMBRES": {
+  "Region": "Región",
+  "Population": "Población",
+  "Area (sq. mi.)": "Superficie",
+  "Pop. Density (per sq. mi.)": "Densidad de población",
+  "Coastline (coast/area ratio)": "Costa / área",
+  "Net migration": "Migración neta",
+  "Infant mortality (per 1000 births)": "Mortalidad infantil",
+  "GDP ($ per capita)": "PIB per cápita",
+  "Literacy (%)": "Alfabetización",
+  "Phones (per 1000)": "Teléfonos",
+  "Arable (%)": "Tierra cultivable",
+  "Crops (%)": "Cultivos permanentes",
+  "Other (%)": "Otros usos del suelo",
+  "Climate": "Clima",
+  "Birthrate": "Natalidad",
+  "Deathrate": "Mortalidad",
+  "Agriculture": "Agricultura",
+  "Industry": "Industria",
+  "Service": "Servicios"
+ }
+}

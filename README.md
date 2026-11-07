@@ -1,76 +1,79 @@
-# Análisis Multivariado y PCA: Países del Mundo
-**Materia:** Métodos Matemáticos para Ciencia de Datos  
-**Institución:** Universidad Nacional Autónoma de México (UNAM)  
-**Facultad / Instituto:** Instituto de Investigaciones en Matemáticas Aplicadas y en Sistemas (IIMAS)  
-**Licenciatura:** Ciencia de Datos  
-**Profesora:** Mtra. Nora Isabel Pérez Quezadas  
+# Exploración de datos y reducción de dimensiones con componentes principales
+
+**Materia:** Métodos Matemáticos para Ciencia de Datos
+**Institución:** Universidad Nacional Autónoma de México (UNAM), Instituto de Investigaciones en Matemáticas Aplicadas y en Sistemas (IIMAS)
+**Licenciatura:** Ciencia de Datos
+**Profesora:** Nora Isabel Pérez Quezadas
 **Integrantes:**
 - De La Cruz Maldonado José Eduardo
 - López Reyes Jorge
 
 ---
 
-## 📌 Descripción del Proyecto
-Este repositorio contiene el análisis matemático, preprocesamiento de datos, análisis exploratorio multivariado y la reducción de dimensionalidad mediante **Análisis de Componentes Principales (PCA)** aplicado al conjunto de datos mundial *Countries of the World* (Kaggle / CIA World Factbook).
+## Descripción
 
-Se investiga y fundamenta de manera formal:
-1. **La justificación matemática de la estandarización:** Demostración empírica de cómo la omisión de la estandarización colapsa las componentes en las magnitudes de mayor escala (Población y Área), ocultando las dimensiones de desarrollo socioeconómico.
-2. **Selección objetiva de componentes:** Aplicación formal del Criterio de Kaiser ($\lambda > 1.0$), gráfico de sedimentación (*Scree Plot*) y análisis de varianza explicada acumulada.
-3. **Interpretación factorial y Biplot:** Proyección de las naciones y vectores directores en el espacio factorial bidimensional ($CP_1$ vs. $CP_2$).
+Análisis exploratorio del conjunto de datos *Countries of the World* (Kaggle, fernandol) y reducción de dimensiones con análisis de componentes principales (PCA). El reporte completo está en `reporte/Proyecto_PCA_Paises.pdf`.
+
+El flujo de trabajo es el planteado en clase:
+
+1. **Depuración.** Se descartan las variables categóricas y redundantes (clima, otros usos del suelo, industria, población y superficie), se eliminan 3 territorios con 4 o más datos faltantes (quedan 224 países) y se imputan los vacíos restantes con la mediana de la región.
+2. **Exploración.** Histograma y diagrama de caja de cada variable, medidas descriptivas, matriz de covarianza, valores atípicos (criterio del rango intercuartílico) y transformación logarítmica de las variables con asimetría extrema.
+3. **Correlaciones.** Matriz de correlación de Pearson de las 13 variables, pares más y menos relacionados, comparación gráfica de las 4 variables más correlacionadas (natalidad, mortalidad infantil, agricultura y alfabetización) y contraste con las 2 menos correlacionadas (tierra cultivable y migración neta).
+4. **PCA.** Valores y vectores propios calculados con `numpy.linalg.eigh` (verificados con scikit-learn). El número de componentes se elige con los criterios de Kaiser, Horn (500 simulaciones) y varianza acumulada; con 4 componentes se explica 76.7 % de la varianza.
+5. **Estandarización.** Comparación del PCA con y sin estandarizar: sin estandarizar, la primera componente explica 99.98 % de la varianza porque solo refleja el PIB per cápita.
 
 ---
 
-## 📁 Estructura del Repositorio
+## Estructura del repositorio
+
 ```text
-├── contexto/                 # Fotografías de notas y requerimientos del pizarrón de clase
-│   ├── pizarron_1.png
-│   ├── pizarron_2.png
-│   └── pizarron_3.png
-├── datos/                    # Conjuntos de datos y matrices calculadas
-│   ├── countries_of_the_world.csv     # Dataset original
-│   ├── countries_cleaned.csv          # Dataset depurado e imputado (N = 216)
-│   ├── estadisticas_descriptivas.csv  # Medidas de tendencia central y dispersión
-│   ├── matriz_covarianza.csv          # Matriz de covarianzas muestral
-│   ├── matriz_correlacion.csv         # Matriz de correlación de Pearson
-│   └── matriz_cargas_loadings.csv     # Cargas factoriales de las componentes
-├── graficas/                 # Visualizaciones generadas en alta resolución
-│   ├── 01_distribuciones_histogramas.png
-│   ├── 02_boxplots_socioeconomicos.png
-│   ├── 03_matriz_correlacion_heatmap.png
-│   ├── 04_comparativa_estandarizacion_varianza.png
-│   ├── 05_scree_plot_kaiser.png
-│   ├── 06_cargas_loadings_heatmap.png
-│   └── 07_biplot_cp1_cp2.png
-├── reporte/                  # Reporte académico formal
-│   ├── Reporte_PCA_Countries_UNAM_IIMAS.pdf
-│   └── preview/              # Renders de comprobación de páginas
-├── prompt_usuario.txt        # Registro del requerimiento original
-├── generar_analisis.py       # Script principal de análisis estadístico y graficación
-├── generar_pdf_reporte.py    # Generador de documento PDF (ReportLab)
-├── requirements.txt          # Dependencias de Python
+├── exploracion_pca.py        # Todo el análisis: depuración, gráficas, correlaciones y PCA
+├── generar_pdf_reporte.py    # Arma el reporte PDF con los resultados del análisis
+├── datos/
+│   └── countries_of_the_world.csv
+├── contexto/                 # Fotografías del pizarrón con los requerimientos de la clase
+├── fuentes/                  # Tipografías Liberation Serif y DejaVu Sans Mono (licencias libres)
+├── graficas/                 # Gráficas generadas por exploracion_pca.py (y fórmulas del reporte)
+├── resultados/               # Tablas y resultados numéricos (CSV y JSON)
+├── reporte/
+│   └── Proyecto_PCA_Paises.pdf
+├── prompt_usuario.txt
+├── requirements.txt
 └── README.md
 ```
 
+Los fragmentos de código que aparecen en el reporte se copian directamente de `exploracion_pca.py` (bloques marcados con `# >>> nombre` y `# <<< nombre`), y todos los números del texto se leen de la carpeta `resultados`, de modo que el PDF siempre corresponde al análisis ejecutado.
+
 ---
 
-## ⚙️ Requisitos e Instalación
-Se requiere Python 3.10 o superior y las siguientes bibliotecas:
+## Instalación y ejecución
+
+Se requiere Python 3.10 o superior. Las rutas se construyen con `pathlib` a partir de la carpeta del proyecto y las tipografías del PDF vienen incluidas, así que el proyecto funciona igual en **Windows**, **macOS** y **Linux** sin modificar nada.
+
+**macOS / Linux (Terminal):**
 ```bash
+cd Proyecto_PCA_Datos_Mundo
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+python3 exploracion_pca.py
+python3 generar_pdf_reporte.py
 ```
 
-### Ejecución
-1. Para regenerar todos los análisis estadísticos, matrices y gráficas:
-```bash
-python generar_analisis.py
-```
-2. Para compilar el reporte académico en PDF:
-```bash
+**Windows (PowerShell):**
+```powershell
+cd Proyecto_PCA_Datos_Mundo
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python exploracion_pca.py
 python generar_pdf_reporte.py
 ```
 
+`exploracion_pca.py` crea las carpetas `graficas` y `resultados`; `generar_pdf_reporte.py` escribe `reporte/Proyecto_PCA_Paises.pdf`. El análisis completo tarda unos segundos.
+
 ---
 
-## 📄 Reporte Académico Final
-El documento final formal con la portada institucional, tablas completas, justificaciones matemáticas, figuras integradas y fragmentos de código se encuentra en:
-👉 `reporte/Reporte_PCA_Countries_UNAM_IIMAS.pdf`
+## Nota sobre los datos
+
+En el archivo original de Kaggle, la fracción del PIB de la industria de Países Bajos (Netherlands) aparece como `04,244`, lo que se lee como 4.244 y es imposible para una fracción (los tres sectores sumarían 5.0). En `datos/countries_of_the_world.csv` ese valor está corregido a `0,244`, con lo que agricultura + industria + servicios suman 1.001, como en el resto de los países.

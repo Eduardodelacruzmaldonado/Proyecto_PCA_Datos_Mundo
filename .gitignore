@@ -1,10 +1,12 @@
-# Ignorar archivos temporales de Python y del sistema
+# Archivos temporales de Python y del sistema
 __pycache__/
 *.py[cod]
 *$py.class
 *.tmp
+*.log
 .DS_Store
 Thumbs.db
-edge_temp/
-*.log
 
+# Entorno virtual de Python
+.venv/
+venv/

@@ -1,0 +1,18 @@
+var,nombre,archivo,n,nulos,media,mediana,asim,atip,min,max,pais_max
+Population,Población,hb_00.png,227,0,28740284.365638766,4786994.0,9.200223032094938,28,7026.0,1313973713.0,China
+Area (sq. mi.),Superficie,hb_01.png,227,0,598226.9559471365,86600.0,5.964245000049949,28,2.0,17075200.0,Russia
+Pop. Density (per sq. mi.),Densidad de población,hb_02.png,227,0,379.0471365638766,78.8,8.284885540855095,21,0.0,16271.5,Monaco
+Coastline (coast/area ratio),Costa / área,hb_03.png,227,0,21.16533039647577,0.73,8.221680027174678,37,0.0,870.66,"Micronesia, Fed. St."
+Net migration,Migración neta,hb_04.png,224,3,0.03812499999999993,0.0,0.12740198549118473,50,-20.99,23.06,Afghanistan
+Infant mortality (per 1000 births),Mortalidad infantil,hb_05.png,224,3,35.50696428571428,21.0,1.4299430645952138,5,2.29,191.19,Angola
+GDP ($ per capita),PIB per cápita,hb_06.png,226,1,9689.823008849558,5550.0,1.375923911871121,3,500.0,55100.0,Luxembourg
+Literacy (%),Alfabetización,hb_07.png,209,18,82.83827751196172,92.5,-1.2178102109708202,2,17.6,100.0,Andorra
+Phones (per 1000),Teléfonos,hb_08.png,223,4,236.06143497757847,176.2,1.0160705646511312,1,0.2,1035.6,Monaco
+Arable (%),Tierra cultivable,hb_09.png,225,2,13.797111111111109,10.42,1.3347192106160863,10,0.0,62.11,Bangladesh
+Crops (%),Cultivos permanentes,hb_10.png,225,2,4.564222222222223,1.03,3.22522426055997,29,0.0,50.68,Kiribati
+Other (%),Otros usos del suelo,hb_11.png,225,2,81.63831111111111,85.7,-0.9563414060392493,3,33.33,100.0,Anguilla
+Birthrate,Natalidad,hb_12.png,224,3,22.114732142857147,18.79,0.7079609905340702,0,7.29,50.73,Niger
+Deathrate,Mortalidad,hb_13.png,223,4,9.24134529147982,7.84,1.6525416354388962,16,2.29,29.74,Swaziland
+Agriculture,Agricultura,hb_14.png,212,15,0.15084433962264152,0.099,1.418650217817399,6,0.0,0.769,Liberia
+Industry,Industria,hb_15.png,211,16,0.28271090047393366,0.272,1.0996066316289264,11,0.02,0.906,Equatorial Guinea
+Service,Servicios,hb_16.png,212,15,0.5652830188679245,0.571,-0.1369389890619915,0,0.062,0.954,Cayman Islands
