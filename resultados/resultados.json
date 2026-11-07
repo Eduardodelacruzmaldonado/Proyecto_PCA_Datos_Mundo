@@ -1,0 +1,1215 @@
+{
+ "n_paises": 227,
+ "n_columnas": 20,
+ "nulos": {
+  "Migración neta": 3,
+  "Mortalidad infantil": 3,
+  "PIB per cápita": 1,
+  "Alfabetización": 18,
+  "Teléfonos": 4,
+  "Tierra cultivable": 2,
+  "Cultivos permanentes": 2,
+  "Otros usos del suelo": 2,
+  "Clima": 22,
+  "Natalidad": 3,
+  "Mortalidad": 4,
+  "Agricultura": 15,
+  "Industria": 16,
+  "Servicios": 15
+ },
+ "estad_eda": [
+  {
+   "var": "Population",
+   "nombre": "Población",
+   "archivo": "hb_00.png",
+   "n": 227,
+   "nulos": 0,
+   "media": 28740284.365638766,
+   "mediana": 4786994.0,
+   "asim": 9.200223032094938,
+   "atip": 28,
+   "min": 7026,
+   "max": 1313973713,
+   "pais_max": "China"
+  },
+  {
+   "var": "Area (sq. mi.)",
+   "nombre": "Superficie",
+   "archivo": "hb_01.png",
+   "n": 227,
+   "nulos": 0,
+   "media": 598226.9559471365,
+   "mediana": 86600.0,
+   "asim": 5.964245000049949,
+   "atip": 28,
+   "min": 2,
+   "max": 17075200,
+   "pais_max": "Russia"
+  },
+  {
+   "var": "Pop. Density (per sq. mi.)",
+   "nombre": "Densidad de población",
+   "archivo": "hb_02.png",
+   "n": 227,
+   "nulos": 0,
+   "media": 379.0471365638766,
+   "mediana": 78.8,
+   "asim": 8.284885540855095,
+   "atip": 21,
+   "min": 0.0,
+   "max": 16271.5,
+   "pais_max": "Monaco"
+  },
+  {
+   "var": "Coastline (coast/area ratio)",
+   "nombre": "Costa / área",
+   "archivo": "hb_03.png",
+   "n": 227,
+   "nulos": 0,
+   "media": 21.16533039647577,
+   "mediana": 0.73,
+   "asim": 8.221680027174678,
+   "atip": 37,
+   "min": 0.0,
+   "max": 870.66,
+   "pais_max": "Micronesia, Fed. St."
+  },
+  {
+   "var": "Net migration",
+   "nombre": "Migración neta",
+   "archivo": "hb_04.png",
+   "n": 224,
+   "nulos": 3,
+   "media": 0.03812499999999993,
+   "mediana": 0.0,
+   "asim": 0.12740198549118473,
+   "atip": 50,
+   "min": -20.99,
+   "max": 23.06,
+   "pais_max": "Afghanistan"
+  },
+  {
+   "var": "Infant mortality (per 1000 births)",
+   "nombre": "Mortalidad infantil",
+   "archivo": "hb_05.png",
+   "n": 224,
+   "nulos": 3,
+   "media": 35.50696428571428,
+   "mediana": 21.0,
+   "asim": 1.4299430645952138,
+   "atip": 5,
+   "min": 2.29,
+   "max": 191.19,
+   "pais_max": "Angola"
+  },
+  {
+   "var": "GDP ($ per capita)",
+   "nombre": "PIB per cápita",
+   "archivo": "hb_06.png",
+   "n": 226,
+   "nulos": 1,
+   "media": 9689.823008849558,
+   "mediana": 5550.0,
+   "asim": 1.375923911871121,
+   "atip": 3,
+   "min": 500.0,
+   "max": 55100.0,
+   "pais_max": "Luxembourg"
+  },
+  {
+   "var": "Literacy (%)",
+   "nombre": "Alfabetización",
+   "archivo": "hb_07.png",
+   "n": 209,
+   "nulos": 18,
+   "media": 82.83827751196172,
+   "mediana": 92.5,
+   "asim": -1.2178102109708202,
+   "atip": 2,
+   "min": 17.6,
+   "max": 100.0,
+   "pais_max": "Andorra"
+  },
+  {
+   "var": "Phones (per 1000)",
+   "nombre": "Teléfonos",
+   "archivo": "hb_08.png",
+   "n": 223,
+   "nulos": 4,
+   "media": 236.06143497757847,
+   "mediana": 176.2,
+   "asim": 1.0160705646511312,
+   "atip": 1,
+   "min": 0.2,
+   "max": 1035.6,
+   "pais_max": "Monaco"
+  },
+  {
+   "var": "Arable (%)",
+   "nombre": "Tierra cultivable",
+   "archivo": "hb_09.png",
+   "n": 225,
+   "nulos": 2,
+   "media": 13.797111111111109,
+   "mediana": 10.42,
+   "asim": 1.3347192106160863,
+   "atip": 10,
+   "min": 0.0,
+   "max": 62.11,
+   "pais_max": "Bangladesh"
+  },
+  {
+   "var": "Crops (%)",
+   "nombre": "Cultivos permanentes",
+   "archivo": "hb_10.png",
+   "n": 225,
+   "nulos": 2,
+   "media": 4.564222222222223,
+   "mediana": 1.03,
+   "asim": 3.22522426055997,
+   "atip": 29,
+   "min": 0.0,
+   "max": 50.68,
+   "pais_max": "Kiribati"
+  },
+  {
+   "var": "Other (%)",
+   "nombre": "Otros usos del suelo",
+   "archivo": "hb_11.png",
+   "n": 225,
+   "nulos": 2,
+   "media": 81.63831111111111,
+   "mediana": 85.7,
+   "asim": -0.9563414060392493,
+   "atip": 3,
+   "min": 33.33,
+   "max": 100.0,
+   "pais_max": "Anguilla"
+  },
+  {
+   "var": "Birthrate",
+   "nombre": "Natalidad",
+   "archivo": "hb_12.png",
+   "n": 224,
+   "nulos": 3,
+   "media": 22.114732142857147,
+   "mediana": 18.79,
+   "asim": 0.7079609905340702,
+   "atip": 0,
+   "min": 7.29,
+   "max": 50.73,
+   "pais_max": "Niger"
+  },
+  {
+   "var": "Deathrate",
+   "nombre": "Mortalidad",
+   "archivo": "hb_13.png",
+   "n": 223,
+   "nulos": 4,
+   "media": 9.24134529147982,
+   "mediana": 7.84,
+   "asim": 1.6525416354388962,
+   "atip": 16,
+   "min": 2.29,
+   "max": 29.74,
+   "pais_max": "Swaziland"
+  },
+  {
+   "var": "Agriculture",
+   "nombre": "Agricultura",
+   "archivo": "hb_14.png",
+   "n": 212,
+   "nulos": 15,
+   "media": 0.15084433962264152,
+   "mediana": 0.099,
+   "asim": 1.418650217817399,
+   "atip": 6,
+   "min": 0.0,
+   "max": 0.769,
+   "pais_max": "Liberia"
+  },
+  {
+   "var": "Industry",
+   "nombre": "Industria",
+   "archivo": "hb_15.png",
+   "n": 211,
+   "nulos": 16,
+   "media": 0.28271090047393366,
+   "mediana": 0.272,
+   "asim": 1.0996066316289264,
+   "atip": 11,
+   "min": 0.02,
+   "max": 0.906,
+   "pais_max": "Equatorial Guinea"
+  },
+  {
+   "var": "Service",
+   "nombre": "Servicios",
+   "archivo": "hb_16.png",
+   "n": 212,
+   "nulos": 15,
+   "media": 0.5652830188679245,
+   "mediana": 0.571,
+   "asim": -0.1369389890619915,
+   "atip": 0,
+   "min": 0.062,
+   "max": 0.954,
+   "pais_max": "Cayman Islands"
+  }
+ ],
+ "regiones": {
+  "SUB-SAHARAN AFRICA": 51,
+  "LATIN AMER. & CARIB": 45,
+  "ASIA (EX. NEAR EAST)": 28,
+  "WESTERN EUROPE": 28,
+  "OCEANIA": 21,
+  "NEAR EAST": 16,
+  "EASTERN EUROPE": 12,
+  "C.W. OF IND. STATES": 12,
+  "NORTHERN AFRICA": 6,
+  "NORTHERN AMERICA": 5,
+  "BALTICS": 3
+ },
+ "clima": {
+  "1": 29,
+  "1.5": 8,
+  "2": 111,
+  "2.5": 3,
+  "3": 48,
+  "4": 6,
+  "sin dato": 22
+ },
+ "eliminados": [
+  "Mayotte",
+  "Wallis and Futuna",
+  "Western Sahara"
+ ],
+ "n_final": 224,
+ "imputados": {
+  "Migración neta": 1,
+  "Mortalidad infantil": 1,
+  "Alfabetización": 16,
+  "Teléfonos": 3,
+  "Tierra cultivable": 1,
+  "Cultivos permanentes": 1,
+  "Natalidad": 1,
+  "Mortalidad": 2,
+  "Agricultura": 12,
+  "Servicios": 13
+ },
+ "corr_suma_suelo": [
+  99.88,
+  100.01
+ ],
+ "suma_sectores": [
+  0.9059999999999999,
+  1.01
+ ],
+ "corr_industria": {
+  "Agricultura": -0.32290896708555406,
+  "Servicios": -0.5445940699994943
+ },
+ "a_log": [
+  "Densidad de población",
+  "Costa / área",
+  "Cultivos permanentes"
+ ],
+ "asim": {
+  "Densidad de población": [
+   8.231809814974529,
+   0.3175358531232933
+  ],
+  "Costa / área": [
+   8.193629346585913,
+   1.1445237413887788
+  ],
+  "Migración neta": [
+   0.13585954305209022,
+   0.13585954305209022
+  ],
+  "Mortalidad infantil": [
+   1.4473638438524057,
+   1.4473638438524057
+  ],
+  "PIB per cápita": [
+   1.3627850707848341,
+   1.3627850707848341
+  ],
+  "Alfabetización": [
+   -1.3368518944535372,
+   -1.3368518944535372
+  ],
+  "Teléfonos": [
+   1.0162607046663878,
+   1.0162607046663878
+  ],
+  "Tierra cultivable": [
+   1.3257260382750606,
+   1.3257260382750606
+  ],
+  "Cultivos permanentes": [
+   3.317298844639487,
+   0.881250294414923
+  ],
+  "Natalidad": [
+   0.7256319346421729,
+   0.7256319346421729
+  ],
+  "Mortalidad": [
+   1.652187643549587,
+   1.652187643549587
+  ],
+  "Agricultura": [
+   1.4530293568525898,
+   1.4530293568525898
+  ],
+  "Servicios": [
+   -0.2161834600753363,
+   -0.2161834600753363
+  ]
+ },
+ "desc": [
+  {
+   "nombre": "Densidad de población",
+   "media": 381.4558035714286,
+   "mediana": 79.15,
+   "varianza": 2792075.193867513,
+   "desv_est": 1670.9503864171172,
+   "minimo": 0.0,
+   "maximo": 16271.5
+  },
+  {
+   "nombre": "Costa / área",
+   "media": 21.015669642857144,
+   "mediana": 0.725,
+   "varianza": 5287.118065917281,
+   "desv_est": 72.71257158096721,
+   "minimo": 0.0,
+   "maximo": 870.66
+  },
+  {
+   "nombre": "Migración neta",
+   "media": 0.007857142857142849,
+   "mediana": 0.0,
+   "varianza": 23.700215118513775,
+   "desv_est": 4.868286671767982,
+   "minimo": -20.99,
+   "maximo": 23.06
+  },
+  {
+   "nombre": "Mortalidad infantil",
+   "media": 35.284732142857145,
+   "mediana": 20.939999999999998,
+   "varianza": 1251.501056430173,
+   "desv_est": 35.37656083383705,
+   "minimo": 2.29,
+   "maximo": 191.19
+  },
+  {
+   "nombre": "PIB per cápita",
+   "media": 9748.214285714286,
+   "mediana": 5700.0,
+   "varianza": 101501162.71620756,
+   "desv_est": 10074.778544276174,
+   "minimo": 500.0,
+   "maximo": 55100.0
+  },
+  {
+   "nombre": "Alfabetización",
+   "media": 83.90870535714285,
+   "mediana": 92.9,
+   "varianza": 370.6478274643658,
+   "desv_est": 19.252216170206633,
+   "minimo": 17.6,
+   "maximo": 100.0
+  },
+  {
+   "nombre": "Teléfonos",
+   "media": 236.46763392857142,
+   "mediana": 180.3,
+   "varianza": 51669.64299482503,
+   "desv_est": 227.30957523787913,
+   "minimo": 0.2,
+   "maximo": 1035.6
+  },
+  {
+   "nombre": "Tierra cultivable",
+   "media": 13.911785714285713,
+   "mediana": 10.6,
+   "varianza": 169.64669993593847,
+   "desv_est": 13.02484932488428,
+   "minimo": 0.0,
+   "maximo": 62.11
+  },
+  {
+   "nombre": "Cultivos permanentes",
+   "media": 4.473839285714285,
+   "mediana": 1.02,
+   "varianza": 68.33913138212685,
+   "desv_est": 8.266748537492044,
+   "minimo": 0.0,
+   "maximo": 50.68
+  },
+  {
+   "nombre": "Natalidad",
+   "media": 21.975312499999998,
+   "mediana": 18.75,
+   "varianza": 123.99748510369956,
+   "desv_est": 11.135415802910082,
+   "minimo": 7.29,
+   "maximo": 50.73
+  },
+  {
+   "nombre": "Mortalidad",
+   "media": 9.237142857142857,
+   "mediana": 7.97,
+   "varianza": 24.839706598334402,
+   "desv_est": 4.983944883155752,
+   "minimo": 2.29,
+   "maximo": 29.74
+  },
+  {
+   "nombre": "Agricultura",
+   "media": 0.14769196428571427,
+   "mediana": 0.098,
+   "varianza": 0.020910137872357466,
+   "desv_est": 0.1446033812618414,
+   "minimo": 0.0,
+   "maximo": 0.769
+  },
+  {
+   "nombre": "Servicios",
+   "media": 0.5720178571428571,
+   "mediana": 0.581,
+   "varianza": 0.026948492953235106,
+   "desv_est": 0.16415996148036557,
+   "minimo": 0.062,
+   "maximo": 0.954
+  }
+ ],
+ "cov_clave": {
+  "nombres": [
+   "PIB per cápita",
+   "Mortalidad infantil",
+   "Alfabetización",
+   "Teléfonos",
+   "Natalidad"
+  ],
+  "matriz": [
+   [
+    101501162.71620761,
+    -212988.75384368992,
+    97969.01785714283,
+    1904505.4464285714,
+    -72174.52634529148
+   ],
+   [
+    -212988.75384368992,
+    1251.5010564301733,
+    -524.4524382407116,
+    -5378.960574851856,
+    333.29002945627803
+   ],
+   [
+    97969.01785714283,
+    -524.4524382407116,
+    370.6478274643658,
+    2558.387457909592,
+    -167.42408008688338
+   ],
+   [
+    1904505.4464285714,
+    -5378.960574851856,
+    2558.387457909592,
+    51669.642994825044,
+    -1825.9486972393495
+   ],
+   [
+    -72174.52634529148,
+    333.29002945627803,
+    -167.42408008688338,
+    -1825.9486972393495,
+    123.99748510369952
+   ]
+  ]
+ },
+ "media_gt_mediana": [
+  "Densidad de población",
+  "Costa / área",
+  "Migración neta",
+  "Mortalidad infantil",
+  "PIB per cápita",
+  "Teléfonos",
+  "Tierra cultivable",
+  "Cultivos permanentes",
+  "Natalidad",
+  "Mortalidad",
+  "Agricultura"
+ ],
+ "atipicos": [
+  {
+   "nombre": "Densidad de población",
+   "antes": 20,
+   "despues": 7,
+   "ejemplos": [
+    "Monaco",
+    "Macau",
+    "Singapore"
+   ]
+  },
+  {
+   "nombre": "Costa / área",
+   "antes": 37,
+   "despues": 1,
+   "ejemplos": [
+    "Micronesia, Fed. St.",
+    "Palau",
+    "N. Mariana Islands"
+   ]
+  },
+  {
+   "nombre": "Migración neta",
+   "antes": 50,
+   "despues": 50,
+   "ejemplos": [
+    "Afghanistan",
+    "Micronesia, Fed. St.",
+    "American Samoa"
+   ]
+  },
+  {
+   "nombre": "Mortalidad infantil",
+   "antes": 5,
+   "despues": 5,
+   "ejemplos": [
+    "Angola",
+    "Afghanistan",
+    "Sierra Leone"
+   ]
+  },
+  {
+   "nombre": "PIB per cápita",
+   "antes": 3,
+   "despues": 3,
+   "ejemplos": [
+    "Luxembourg",
+    "Norway",
+    "United States"
+   ]
+  },
+  {
+   "nombre": "Alfabetización",
+   "antes": 16,
+   "despues": 16,
+   "ejemplos": [
+    "Niger",
+    "Burkina Faso",
+    "Sierra Leone"
+   ]
+  },
+  {
+   "nombre": "Teléfonos",
+   "antes": 1,
+   "despues": 1,
+   "ejemplos": [
+    "Monaco"
+   ]
+  },
+  {
+   "nombre": "Tierra cultivable",
+   "antes": 10,
+   "despues": 10,
+   "ejemplos": [
+    "Bangladesh",
+    "Ukraine",
+    "Moldova"
+   ]
+  },
+  {
+   "nombre": "Cultivos permanentes",
+   "antes": 28,
+   "despues": 0,
+   "ejemplos": [
+    "Kiribati",
+    "Sao Tome & Principe",
+    "Micronesia, Fed. St."
+   ]
+  },
+  {
+   "nombre": "Natalidad",
+   "antes": 0,
+   "despues": 0,
+   "ejemplos": []
+  },
+  {
+   "nombre": "Mortalidad",
+   "antes": 16,
+   "despues": 16,
+   "ejemplos": [
+    "Swaziland",
+    "Botswana",
+    "Lesotho"
+   ]
+  },
+  {
+   "nombre": "Agricultura",
+   "antes": 7,
+   "despues": 7,
+   "ejemplos": [
+    "Liberia",
+    "Somalia",
+    "Guinea-Bissau"
+   ]
+  },
+  {
+   "nombre": "Servicios",
+   "antes": 1,
+   "despues": 1,
+   "ejemplos": [
+    "Equatorial Guinea"
+   ]
+  }
+ ],
+ "pares_fuertes": [
+  [
+   "Natalidad",
+   "Mortalidad infantil",
+   0.8460582661358543
+  ],
+  [
+   "Teléfonos",
+   "PIB per cápita",
+   0.8316277641314421
+  ],
+  [
+   "Natalidad",
+   "Alfabetización",
+   -0.780963530200482
+  ],
+  [
+   "Alfabetización",
+   "Mortalidad infantil",
+   -0.7700337654990894
+  ],
+  [
+   "Natalidad",
+   "Teléfonos",
+   -0.7213805063145099
+  ],
+  [
+   "Agricultura",
+   "Mortalidad infantil",
+   0.7065480957856056
+  ],
+  [
+   "Agricultura",
+   "Natalidad",
+   0.6748510220434836
+  ],
+  [
+   "Servicios",
+   "Teléfonos",
+   0.6712801993109943
+  ],
+  [
+   "Teléfonos",
+   "Mortalidad infantil",
+   -0.6689058904819155
+  ],
+  [
+   "Mortalidad",
+   "Mortalidad infantil",
+   0.6578088152520607
+  ]
+ ],
+ "pares_debiles_max": [
+  [
+   "Cultivos permanentes",
+   "Mortalidad infantil",
+   -0.09460589205080264
+  ],
+  [
+   "Natalidad",
+   "Migración neta",
+   -0.07623360674426682
+  ],
+  [
+   "Tierra cultivable",
+   "Alfabetización",
+   0.07447444565151089
+  ],
+  [
+   "Agricultura",
+   "Cultivos permanentes",
+   0.0655736245446688
+  ],
+  [
+   "Tierra cultivable",
+   "Teléfonos",
+   0.06363971779384381
+  ]
+ ],
+ "n_pares_08": 2,
+ "n_pares_05": 23,
+ "n_pares": 78,
+ "dep": [
+  {
+   "nombre": "Densidad de población",
+   "r_max": 0.4762288580058396,
+   "con": "Costa / área"
+  },
+  {
+   "nombre": "Costa / área",
+   "r_max": 0.5151277167353172,
+   "con": "Servicios"
+  },
+  {
+   "nombre": "Migración neta",
+   "r_max": 0.3887741552356841,
+   "con": "PIB per cápita"
+  },
+  {
+   "nombre": "Mortalidad infantil",
+   "r_max": 0.8460582661358543,
+   "con": "Natalidad"
+  },
+  {
+   "nombre": "PIB per cápita",
+   "r_max": 0.8316277641314421,
+   "con": "Teléfonos"
+  },
+  {
+   "nombre": "Alfabetización",
+   "r_max": -0.780963530200482,
+   "con": "Natalidad"
+  },
+  {
+   "nombre": "Teléfonos",
+   "r_max": 0.8316277641314421,
+   "con": "PIB per cápita"
+  },
+  {
+   "nombre": "Tierra cultivable",
+   "r_max": 0.3588152440944999,
+   "con": "Densidad de población"
+  },
+  {
+   "nombre": "Cultivos permanentes",
+   "r_max": -0.37866009961482333,
+   "con": "Migración neta"
+  },
+  {
+   "nombre": "Natalidad",
+   "r_max": 0.8460582661358543,
+   "con": "Mortalidad infantil"
+  },
+  {
+   "nombre": "Mortalidad",
+   "r_max": 0.6578088152520607,
+   "con": "Mortalidad infantil"
+  },
+  {
+   "nombre": "Agricultura",
+   "r_max": 0.7065480957856056,
+   "con": "Mortalidad infantil"
+  },
+  {
+   "nombre": "Servicios",
+   "r_max": 0.6712801993109943,
+   "con": "Teléfonos"
+  }
+ ],
+ "cov_igual_corr": true,
+ "sklearn_ok": true,
+ "rango": [
+  {
+   "nombre": "Densidad de población",
+   "minimo": 0.0,
+   "maximo": 4.21145428021392,
+   "rango": 4.21145428021392,
+   "varianza": 0.44789315023897786
+  },
+  {
+   "nombre": "Costa / área",
+   "minimo": 0.0,
+   "maximo": 2.9403471169070134,
+   "rango": 2.9403471169070134,
+   "varianza": 0.4925538086318974
+  },
+  {
+   "nombre": "Migración neta",
+   "minimo": -20.99,
+   "maximo": 23.06,
+   "rango": 44.05,
+   "varianza": 23.700215118513775
+  },
+  {
+   "nombre": "Mortalidad infantil",
+   "minimo": 2.29,
+   "maximo": 191.19,
+   "rango": 188.9,
+   "varianza": 1251.501056430173
+  },
+  {
+   "nombre": "PIB per cápita",
+   "minimo": 500.0,
+   "maximo": 55100.0,
+   "rango": 54600.0,
+   "varianza": 101501162.71620756
+  },
+  {
+   "nombre": "Alfabetización",
+   "minimo": 17.6,
+   "maximo": 100.0,
+   "rango": 82.4,
+   "varianza": 370.6478274643658
+  },
+  {
+   "nombre": "Teléfonos",
+   "minimo": 0.2,
+   "maximo": 1035.6,
+   "rango": 1035.3999999999999,
+   "varianza": 51669.64299482503
+  },
+  {
+   "nombre": "Tierra cultivable",
+   "minimo": 0.0,
+   "maximo": 62.11,
+   "rango": 62.11,
+   "varianza": 169.64669993593847
+  },
+  {
+   "nombre": "Cultivos permanentes",
+   "minimo": 0.0,
+   "maximo": 1.7133225049870278,
+   "rango": 1.7133225049870278,
+   "varianza": 0.1985641225592583
+  },
+  {
+   "nombre": "Natalidad",
+   "minimo": 7.29,
+   "maximo": 50.73,
+   "rango": 43.44,
+   "varianza": 123.99748510369956
+  },
+  {
+   "nombre": "Mortalidad",
+   "minimo": 2.29,
+   "maximo": 29.74,
+   "rango": 27.45,
+   "varianza": 24.839706598334402
+  },
+  {
+   "nombre": "Agricultura",
+   "minimo": 0.0,
+   "maximo": 0.769,
+   "rango": 0.769,
+   "varianza": 0.020910137872357466
+  },
+  {
+   "nombre": "Servicios",
+   "minimo": 0.062,
+   "maximo": 0.954,
+   "rango": 0.8919999999999999,
+   "varianza": 0.026948492953235106
+  }
+ ],
+ "var_total_s": 101554797.87906288,
+ "part_pib": 0.999471859882789,
+ "var_pib": 101501162.71620756,
+ "var_min": [
+  "Agricultura",
+  0.020910137872357466
+ ],
+ "k": 4,
+ "k_kaiser": 4,
+ "k_horn": 2,
+ "k_80": 5,
+ "val_z": [
+  5.567351424911937,
+  1.949721087324599,
+  1.2850120597789745,
+  1.172300451887405,
+  0.7463140265336954,
+  0.48617660422901643,
+  0.42549073629433426,
+  0.38916488012366085,
+  0.3689730301505435,
+  0.23340525933502046,
+  0.17065506667537123,
+  0.12128834137345296,
+  0.08414703138199142
+ ],
+ "prop_z": [
+  0.4282578019163028,
+  0.1499785451788153,
+  0.09884708152145956,
+  0.09017695783749267,
+  0.057408771271822714,
+  0.03739820032530895,
+  0.03273005663802571,
+  0.02993576000951237,
+  0.028382540780811035,
+  0.017954250718078494,
+  0.0131273128211824,
+  0.009329872413342533,
+  0.0064728485678454935
+ ],
+ "acum_z": [
+  0.4282578019163028,
+  0.5782363470951181,
+  0.6770834286165777,
+  0.7672603864540704,
+  0.8246691577258931,
+  0.862067358051202,
+  0.8947974146892278,
+  0.9247331746987402,
+  0.9531157154795512,
+  0.9710699661976298,
+  0.9841972790188122,
+  0.9935271514321546,
+  1.0000000000000002
+ ],
+ "horn": [
+  1.5163588040984806,
+  1.387438818683877,
+  1.2878260014980518,
+  1.2137668621531692,
+  1.1513591202641535,
+  1.084896679322328,
+  1.0201631525013832,
+  0.9736149538496006,
+  0.9167734397198647,
+  0.8649285151958174,
+  0.8156678485558249,
+  0.7547437863886788,
+  0.6949141181781712
+ ],
+ "off_diag": 3.3306690738754696e-15,
+ "cargas": {
+  "nombres": [
+   "Densidad de población",
+   "Costa / área",
+   "Migración neta",
+   "Mortalidad infantil",
+   "PIB per cápita",
+   "Alfabetización",
+   "Teléfonos",
+   "Tierra cultivable",
+   "Cultivos permanentes",
+   "Natalidad",
+   "Mortalidad",
+   "Agricultura",
+   "Servicios"
+  ],
+  "m": [
+   [
+    0.4256629283212922,
+    0.4547252903841003,
+    0.5676420735191379,
+    0.33720690603923154,
+    -0.03956360595578778
+   ],
+   [
+    0.5273757645289304,
+    0.3557222929183066,
+    -0.09525570369738774,
+    0.6390935865258246,
+    0.23283547383074715
+   ],
+   [
+    0.17004841037301932,
+    -0.5863105929406558,
+    0.4250342512130749,
+    0.32339625707725506,
+    -0.48608540496500746
+   ],
+   [
+    -0.9080127991123623,
+    -0.11228783430009576,
+    0.17903121739872543,
+    0.1742314681125235,
+    0.15787985115001357
+   ],
+   [
+    0.7663850358527557,
+    -0.42045826939780767,
+    0.18513129163813463,
+    0.01552682468869256,
+    0.04965422355794304
+   ],
+   [
+    0.7885543644445185,
+    0.036628285086282915,
+    -0.20355706633913936,
+    -0.28263650991915945,
+    0.06517352195870801
+   ],
+   [
+    0.8530069717229836,
+    -0.24082529735534805,
+    0.16078173178280683,
+    0.07903514828444935,
+    0.2047112386871016
+   ],
+   [
+    0.11029893194014313,
+    0.3710721098738999,
+    0.6926429493403724,
+    -0.5207051333658732,
+    -0.03952951850522832
+   ],
+   [
+    0.011050955029899367,
+    0.8659269073899388,
+    0.0334604308858938,
+    -0.011359962914100774,
+    -0.057161508014466005
+   ],
+   [
+    -0.8716105891026437,
+    0.05375753941499722,
+    0.01603503444134338,
+    0.31100280443292094,
+    -0.019390866497798722
+   ],
+   [
+    -0.5463041276202542,
+    -0.34664438289209554,
+    0.3795239334901586,
+    -0.09442111408136822,
+    0.5806281343460055
+   ],
+   [
+    -0.7908456046582614,
+    0.11435341263773495,
+    0.11738115625127887,
+    0.1311721604032946,
+    -0.008783076283715382
+   ],
+   [
+    0.7886512056456404,
+    0.016203194132486425,
+    0.02251723584084691,
+    0.18636376611962663,
+    0.1957020718834572
+   ]
+  ]
+ },
+ "extremos_cp12": [
+  "Liberia",
+  "Afghanistan",
+  "Sierra Leone",
+  "Angola",
+  "Somalia",
+  "Niger"
+ ],
+ "cp1_extremos": {
+  "alto": [
+   "Bermuda",
+   "Cayman Islands",
+   "Hong Kong"
+  ],
+  "bajo": [
+   "Liberia",
+   "Sierra Leone",
+   "Somalia"
+  ]
+ },
+ "grupo_medias_cp1": {
+  "África": -2.730267203165583,
+  "América": 1.0515020647007858,
+  "Asia y Cercano Oriente": -0.05545309483914282,
+  "Europa": 2.2121377764559513,
+  "CEI": -0.6105938300506547,
+  "Oceanía": 0.6117365342496024
+ },
+ "prop_s": [
+  0.9998296792517597,
+  0.00015860579844249458,
+  8.261589078089235e-06,
+  1.6594412158204891e-06,
+  1.2690592198288976e-06,
+  2.370633269526049e-07,
+  1.810910550985796e-07,
+  9.89343351568635e-08,
+  4.936321657237002e-09,
+  1.6146699670171659e-09,
+  1.0158691601387745e-09,
+  1.3437175958925057e-10,
+  7.033409385397378e-11
+ ],
+ "r_cp1": 0.7664806585870293,
+ "val_s": [
+  101537500.98990072,
+  16107.179803274921,
+  839.0040089852256,
+  168.52421726483612,
+  128.8790525662849,
+  24.07491825320999,
+  18.39066549824249,
+  10.047256410154738,
+  0.5013071481667444,
+  0.1639774821418214,
+  0.10316638722946661,
+  0.013646096885740372,
+  0.007142764685347346
+ ],
+ "vec_s_pib": 0.9998210154514532,
+ "vec_s_phones": 0.01876301041927513,
+ "k_s_80": 1,
+ "cp1_s": [
+  [
+   "Densidad de población",
+   1.449552994981303e-05
+  ],
+  [
+   "Costa / área",
+   1.592425610036191e-05
+  ],
+  [
+   "Migración neta",
+   0.00018781117385240567
+  ],
+  [
+   "Mortalidad infantil",
+   -0.002098288207588494
+  ],
+  [
+   "PIB per cápita",
+   0.9998210154514532
+  ],
+  [
+   "Alfabetización",
+   0.0009651711575767466
+  ],
+  [
+   "Teléfonos",
+   0.01876301041927513
+  ],
+  [
+   "Tierra cultivable",
+   2.457841180356824e-05
+  ],
+  [
+   "Cultivos permanentes",
+   -1.131318340400539e-05
+  ],
+  [
+   "Natalidad",
+   -0.0007110360276909134
+  ],
+  [
+   "Mortalidad",
+   -9.969725388830772e-05
+  ],
+  [
+   "Agricultura",
+   -8.405292407885375e-06
+  ],
+  [
+   "Servicios",
+   9.034126084794329e-06
+  ]
+ ]
+}

@@ -1,0 +1,68 @@
+PROMPT ORIGINAL DEL USUARIO (guardado tal cual fue enviado, con ortografía corregida solo donde dificultaba la lectura)
+=====================================================================================================
+
+Necesito que crees un proyecto en donde crees una carpeta llamada "contexto" y agregues las siguientes imágenes (3 fotos del pizarrón).
+
+Los datos salen de https://www.kaggle.com/datasets/fernandol/countries-of-the-world (el CSV viene de ese link).
+
+También lo que te acabo de escribir, crea un archivo de texto para guardar el prompt que te estoy generando. Y empecemos a hacer lo que viene en las imágenes que te envié. Necesito que guardes este prompt en un archivo txt.
+
+Y también agregues que tienes que ver qué variables son independientes y cuáles podrían depender de otra. También sacar gráficas de cada característica. E incluso, si es necesario que alguna característica no nos sirva para nuestro proyecto, directamente quitar la fila (columna/variable) pero explicar el porqué.
+
+Antes de que comiences, saca los puntos de lo que debes de hacer. Algo importante es que hay cosas que en la imagen no es necesario que pongas en el documento. Por cierto, lo que quiero es que crees un PDF pero que no se vea IA.
+
+"Análisis", "Reporte", "Exposición" y "Código" NO se deben poner en la presentación del PDF. Digo presentación pero no hagas un archivo pptx: todo lo que se haga sea en PDF.
+
+También explicar por qué se eligen las componentes principales de nuestro conjunto de datos. Todo tiene que tener una explicación, no puede sacarse de la manga así porque sí.
+
+Hacer la estandarización de los datos, y ver qué pasa si los estandarizamos y si no los estandarizamos, haciendo una comparación.
+
+También importante sacar la media, mediana, varianza y covarianza, dependiendo de las características que elijamos.
+
+Cada punto que te mencioné se tiene que hacer y subdividir en secciones, y mostrar capturas de lo que tú hagas. Si necesitas que yo haga algo, escríbelo para luego ponerlo como que yo saqué una captura, o así. Pero las implementaciones en Python también anexa el código, pero no pongas todo, solo las partes que van en su correspondiente sección. Por ejemplo: gráfica, y abajo el código de anexo, y abajo la explicación (es un ejemplo, el orden puede variar; como la explicación arriba).
+
+Datos de portada (que no se vea IA):
+- Materia: Métodos Matemáticos para Ciencia de Datos
+- Integrantes: De La Cruz Maldonado José Eduardo y López Reyes Jorge (solo ellos dos)
+- Profesora: Nora Isabel Pérez Quezadas
+- Institución: UNAM, IIMAS, carrera de Ciencia de Datos
+
+=====================================================================================================
+CONTENIDO DE LAS IMÁGENES DEL PIZARRÓN (transcripción)
+=====================================================================================================
+Imagen 1 (matrices):
+- Matriz de correlaciones
+- Matriz de covarianza
+- Pearson = Cov(X,Y) / (σ(X) σ(Y))
+- Esquema de matriz con X, Y, Z... en filas y columnas, diagonal de 1's.
+- (Verde) "Aplicar / Describir", "Correlaciones", "PCA".
+
+Imagen 2 (flujo de trabajo):
+- Datos -> EDA (Análisis exploratorio)
+    - Graficar datos
+    - Preprocesamiento (limpiar BD)
+    - Correlaciones (Matriz de correlación)
+    - Medidas descriptivas: media, varianza, DS (desviación estándar)
+    - Datos anómalos, extremos muy grandes
+- PCA (Reducir dimensiones)
+    - ¿Qué ventaja obtenemos aplicando PCA?
+    - Por qué eligen las C.P. (componentes principales)
+    - Estandarización (Rango) (Si estandarizan y si no)
+    - Nota en rojo: "Es la misma que la de covarianza"
+- Flecha: "Corregir datos" (regresar al paso de datos si hace falta)
+
+Imagen 3 (entregables):
+- Análisis, Reporte, Exposición, Tarea + Asistencias + Participaciones, Código
+- Exposiciones: clase 18 y 19 (clase + tarea). Martes 17.
+
+=====================================================================================================
+CONTEXTO ADICIONAL (mensajes posteriores del usuario)
+=====================================================================================================
+- Se compartió el CSV de Kaggle (contexto/countries_of_the_world.csv) y se pidió ahorrar tokens: no releer todo, ser eficiente.
+- Se compartió la rúbrica del proyecto final (contexto/Rubrica_proyecto_final.pdf): reporte escrito 40 %, presentación 40 % (máx. 15 min, todos los integrantes), preguntas 20 %.
+  Reporte: título e integrantes (orden alfabético por apellido), resumen (7-10 renglones), introducción, análisis experimental, resultados, discusión, conclusiones, bibliografía.
+  Entrega del reporte: 17 de noviembre; presentaciones: 18 y 19 de noviembre.
+- Decisión del usuario: conservar la gran mayoría de lo ya hecho y ajustar según la rúbrica, para ir aprendiendo por qué se quita lo que se quita. Tiene más información que aportará después.
+- Nombre correcto de la materia: "Métodos Matemáticos Computacionales para Ciencia de Datos".
+- Pendiente: presentación (diapositivas en PDF, poco texto) y preparación de preguntas.
+- Instrucción: todo el contexto que el usuario proporcione se agrega a la carpeta contexto/ y se sube a GitHub.
