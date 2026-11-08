@@ -493,6 +493,60 @@ RESULTADOS["cp1_altos"] = cp1.sort_values(ascending=False).index[:3].tolist()
 RESULTADOS["cp1_bajos"] = cp1.sort_values().index[:3].tolist()
 
 # ---------------------------------------------------------------------------------------------
+# Regresar a la matriz original: reconstrucción con k componentes (sección 3.5.6)
+# ---------------------------------------------------------------------------------------------
+# >>> reconstruccion
+media, desv = X.mean(axis=0), X.std(axis=0, ddof=1)
+
+
+def reconstruir(kk):
+    Zk = scores_z[:, :kk] @ vec_z[:, :kk].T         # aproximación de Z con kk componentes
+    Xk = Zk * desv + media                          # se deshace la estandarización
+    for j, v in enumerate(VARS):
+        if v in a_log:
+            Xk[:, j] = 10 ** Xk[:, j] - 1           # se deshace log10(x + 1)
+    return Zk, Xk
+
+
+original = datos[VARS].to_numpy(float)
+sst = ((original - original.mean(axis=0)) ** 2).sum(axis=0)
+err_rel, r2_var = [], {}
+for kk in range(1, p + 1):
+    Zk, Xk = reconstruir(kk)
+    err_rel.append(np.linalg.norm(Z - Zk) / np.linalg.norm(Z))
+    r2_var[kk] = 1 - ((original - Xk) ** 2).sum(axis=0) / sst
+err_rel = np.array(err_rel)
+print("con k = p se recupera la matriz original:", np.allclose(reconstruir(p)[1], original))
+print("error^2 = varianza no explicada:", np.allclose(err_rel ** 2, 1 - acum_z))
+print("error relativo con k componentes:", np.round(err_rel, 3))
+# <<< reconstruccion
+RESULTADOS["recon_ok"] = bool(np.allclose(reconstruir(p)[1], original))
+RESULTADOS["recon_ident"] = bool(np.allclose(err_rel ** 2, 1 - acum_z))
+RESULTADOS["err_rel"] = err_rel.tolist()
+RESULTADOS["r2_k"] = {str(kk): {v: float(r2_var[kk][j]) for j, v in enumerate(VARS)} for kk in (2, k)}
+_sel = ["Mexico", "Germany", "Niger"]
+_cols = ["GDP ($ per capita)", "Infant mortality (per 1000 births)", "Phones (per 1000)", "Birthrate"]
+_ix = [list(datos.index).index(c) for c in _sel]
+_jx = [VARS.index(c) for c in _cols]
+RESULTADOS["recon_paises"] = {
+    "vars": _cols, "paises": _sel,
+    "original": [[float(original[i, j]) for j in _jx] for i in _ix],
+    "k2": [[float(reconstruir(2)[1][i, j]) for j in _jx] for i in _ix],
+    "k4": [[float(reconstruir(k)[1][i, j]) for j in _jx] for i in _ix]}
+
+fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 2.7), gridspec_kw={"width_ratios": [1, 1.25]})
+a.plot(range(1, p + 1), 100 * (1 - acum_z), "o-", color=C1, ms=3.5)
+a.axvline(k, color=C2, ls=":", lw=1)
+a.text(k + .2, 62, f"k = {k}", color=C2, fontsize=7)
+a.set_xlabel("componentes conservadas (k)"); a.set_ylabel("% de la varianza no recuperada")
+y = np.arange(p)
+b.barh(y - .2, r2_var[2], .4, color=C2, label="k = 2")
+b.barh(y + .2, r2_var[k], .4, color=C1, label=f"k = {k}")
+b.set_yticks(y); b.set_yticklabels([NOMBRES[v] for v in VARS], fontsize=6.3); b.invert_yaxis()
+b.set_xlabel("R² en la escala original"); b.legend(frameon=False, fontsize=6.5)
+fig.tight_layout(); guardar(fig, "fig_recon.png")
+
+# ---------------------------------------------------------------------------------------------
 # Comparación gráfica de las variables más y menos correlacionadas (sección 3.4.4)
 # ---------------------------------------------------------------------------------------------
 cmap_r = plt.get_cmap("RdBu_r")

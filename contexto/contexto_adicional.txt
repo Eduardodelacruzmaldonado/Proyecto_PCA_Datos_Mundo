@@ -1,0 +1,43 @@
+CONTEXTO ADICIONAL DEL PROYECTO (mensajes posteriores del usuario)
+Complementa prompt_usuario.txt. Todo contexto nuevo se agrega en esta carpeta.
+
+CONTENIDO DE LAS IMÁGENES DEL PIZARRÓN (transcripción)
+=====================================================================================================
+Imagen 1 (matrices):
+- Matriz de correlaciones
+- Matriz de covarianza
+- Pearson = Cov(X,Y) / (σ(X) σ(Y))
+- Esquema de matriz con X, Y, Z... en filas y columnas, diagonal de 1's.
+- (Verde) "Aplicar / Describir", "Correlaciones", "PCA".
+
+Imagen 2 (flujo de trabajo):
+- Datos -> EDA (Análisis exploratorio)
+    - Graficar datos
+    - Preprocesamiento (limpiar BD)
+    - Correlaciones (Matriz de correlación)
+    - Medidas descriptivas: media, varianza, DS (desviación estándar)
+    - Datos anómalos, extremos muy grandes
+- PCA (Reducir dimensiones)
+    - ¿Qué ventaja obtenemos aplicando PCA?
+    - Por qué eligen las C.P. (componentes principales)
+    - Estandarización (Rango) (Si estandarizan y si no)
+    - Nota en rojo: "Es la misma que la de covarianza"
+- Flecha: "Corregir datos" (regresar al paso de datos si hace falta)
+
+Imagen 3 (entregables):
+- Análisis, Reporte, Exposición, Tarea + Asistencias + Participaciones, Código
+- Exposiciones: clase 18 y 19 (clase + tarea). Martes 17.
+
+=====================================================================================================
+CONTEXTO ADICIONAL (mensajes posteriores del usuario)
+=====================================================================================================
+- Se compartió el CSV de Kaggle (contexto/countries_of_the_world.csv) y se pidió ahorrar tokens: no releer todo, ser eficiente.
+- Se compartió la rúbrica del proyecto final (contexto/Rubrica_proyecto_final.pdf): reporte escrito 40 %, presentación 40 % (máx. 15 min, todos los integrantes), preguntas 20 %.
+  Reporte: título e integrantes (orden alfabético por apellido), resumen (7-10 renglones), introducción, análisis experimental, resultados, discusión, conclusiones, bibliografía.
+  Entrega del reporte: 17 de noviembre; presentaciones: 18 y 19 de noviembre.
+- Decisión del usuario: conservar la gran mayoría de lo ya hecho y ajustar según la rúbrica, para ir aprendiendo por qué se quita lo que se quita. Tiene más información que aportará después.
+- Nombre correcto de la materia: "Métodos Matemáticos Computacionales para Ciencia de Datos".
+- Pendiente: presentación (diapositivas en PDF, poco texto) y preparación de preguntas.
+- Instrucción: todo el contexto que el usuario proporcione se agrega a la carpeta contexto/ y se sube a GitHub.
+- Solicitud posterior: agregar en el proyecto una parte de "regresar con PCA a la matriz" (reconstrucción de la matriz de datos con k componentes). Se ubicó en el reporte en 3.5.6 (resultados, dentro de PCA), con su ecuación en 1.4.7 y su descripción en 2.5; código en el bloque "reconstruccion" de codigo/exploracion_pca.py.
+- Se decidió partir de la versión del compañero (rama main de GitHub) y agregarle lo nuevo: reconstrucción con PCA, rúbrica en contexto/ y nombre corregido de la materia.

@@ -1,6 +1,6 @@
 # Exploración de datos y reducción de dimensiones con componentes principales
 
-**Materia:** Métodos Matemáticos para Ciencia de Datos
+**Materia:** Métodos Matemáticos Computacionales para Ciencia de Datos
 **Institución:** Universidad Nacional Autónoma de México (UNAM), Instituto de Investigaciones en Matemáticas Aplicadas y en Sistemas (IIMAS)
 **Licenciatura:** Ciencia de Datos
 **Profesora:** Nora Isabel Pérez Quezadas
@@ -21,6 +21,7 @@ El flujo de trabajo es el planteado en clase:
 3. **Correlaciones.** Matriz de correlación de Pearson de las 13 variables, pares más y menos relacionados, comparación gráfica de las 4 variables más correlacionadas (natalidad, mortalidad infantil, agricultura y alfabetización) y contraste con las 2 menos correlacionadas (tierra cultivable y migración neta).
 4. **PCA.** Valores y vectores propios calculados con `numpy.linalg.eigh` (verificados con scikit-learn). El número de componentes se elige con los criterios de Kaiser, Horn (500 simulaciones) y varianza acumulada; con 4 componentes se explica 76.7 % de la varianza.
 5. **Estandarización.** Comparación del PCA con y sin estandarizar: sin estandarizar, la primera componente explica 99.98 % de la varianza porque solo refleja el PIB per cápita.
+6. **Reconstrucción.** Se regresa de las componentes a la matriz original con *k* componentes, se deshacen la estandarización y el logaritmo y se mide el error; con 4 componentes se deja de recuperar 23.3 % de la varianza y en países extremos aparecen valores imposibles (por ejemplo, PIB negativo en Níger).
 
 ---
 
@@ -31,7 +32,7 @@ El flujo de trabajo es el planteado en clase:
 ├── generar_pdf_reporte.py    # Arma el reporte PDF con los resultados del análisis
 ├── datos/
 │   └── countries_of_the_world.csv
-├── contexto/                 # Fotografías del pizarrón con los requerimientos de la clase
+├── contexto/                 # Fotos del pizarrón, rúbrica del proyecto y contexto adicional
 ├── fuentes/                  # Tipografías Liberation Serif y DejaVu Sans Mono (licencias libres)
 ├── graficas/                 # Gráficas generadas por exploracion_pca.py (y fórmulas del reporte)
 ├── resultados/               # Tablas y resultados numéricos (CSV y JSON)
