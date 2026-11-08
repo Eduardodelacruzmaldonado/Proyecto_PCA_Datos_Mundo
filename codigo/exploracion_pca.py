@@ -370,6 +370,56 @@ res["cp1_extremos"] = {"alto": trans.index[np.argsort(scores_z[:, 0])[::-1][:3]]
                        "bajo": trans.index[np.argsort(scores_z[:, 0])[:3]].tolist()}
 res["grupo_medias_cp1"] = {g: float(scores_z[(grupos == g).to_numpy(), 0].mean()) for g in COLORES}
 
+# >>> reconstruccion
+media, desv = X.mean(axis=0), X.std(axis=0, ddof=1)
+
+
+def reconstruir(kk):
+    Zk = scores_z[:, :kk] @ vec_z[:, :kk].T         # aproximación de Z con kk componentes
+    Xk = Zk * desv + media                          # se deshace la estandarización
+    for j, v in enumerate(VARS):
+        if v in a_log:
+            Xk[:, j] = 10 ** Xk[:, j] - 1           # se deshace log10(x + 1)
+    return Zk, Xk
+
+
+original = datos[VARS].to_numpy(float)
+sst = ((original - original.mean(axis=0)) ** 2).sum(axis=0)
+err_rel, r2_var = [], {}
+for kk in range(1, p + 1):
+    Zk, Xk = reconstruir(kk)
+    err_rel.append(np.linalg.norm(Z - Zk) / np.linalg.norm(Z))
+    r2_var[kk] = 1 - ((original - Xk) ** 2).sum(axis=0) / sst
+err_rel = np.array(err_rel)
+print("con k = p se recupera la matriz original:", np.allclose(reconstruir(p)[1], original))
+print("error^2 = varianza no explicada:", np.allclose(err_rel ** 2, 1 - acum_z))
+print("error relativo con k componentes:", np.round(err_rel, 3))
+# <<< reconstruccion
+res["recon_ok"] = bool(np.allclose(reconstruir(p)[1], original))
+res["recon_ident"] = bool(np.allclose(err_rel ** 2, 1 - acum_z))
+res["err_rel"] = err_rel.tolist()
+res["r2_k"] = {str(kk): {NOMBRES[v]: float(r2_var[kk][j]) for j, v in enumerate(VARS)} for kk in (2, k)}
+sel = ["Mexico", "Germany", "Niger"]
+cols = ["GDP ($ per capita)", "Infant mortality (per 1000 births)", "Phones (per 1000)", "Birthrate"]
+ix = [list(datos.index).index(c) for c in sel]
+jx = [VARS.index(c) for c in cols]
+res["recon_paises"] = {"vars": [NOMBRES[c] for c in cols], "paises": sel,
+                       "original": [[float(original[i, j]) for j in jx] for i in ix],
+                       "k2": [[float(reconstruir(2)[1][i, j]) for j in jx] for i in ix],
+                       "k4": [[float(reconstruir(k)[1][i, j]) for j in jx] for i in ix]}
+
+fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 2.7), gridspec_kw={"width_ratios": [1, 1.25]})
+a.plot(range(1, p + 1), 100 * (1 - acum_z), "o-", color=C1, ms=3.5)
+a.axvline(k, color=C2, ls=":", lw=1)
+a.text(k + .2, 62, f"k = {k}", color=C2, fontsize=7)
+a.set_xlabel("componentes conservadas (k)"); a.set_ylabel("% de la varianza no recuperada")
+y = np.arange(p)
+b.barh(y - .2, r2_var[2], .4, color=C2, label="k = 2")
+b.barh(y + .2, r2_var[k], .4, color=C1, label=f"k = {k}")
+b.set_yticks(y); b.set_yticklabels([NOMBRES[v] for v in VARS], fontsize=6.3); b.invert_yaxis()
+b.set_xlabel("R² en la escala original"); b.legend(frameon=False, fontsize=6.5)
+fig.tight_layout(); fig.savefig(FIG / "fig_recon.png"); plt.close(fig)
+
 # >>> comparacion
 prop_s = val_s / val_s.sum()
 scores_s = Xc @ vec_s

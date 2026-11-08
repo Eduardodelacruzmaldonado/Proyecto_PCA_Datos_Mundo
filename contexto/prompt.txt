@@ -66,3 +66,4 @@ CONTEXTO ADICIONAL (mensajes posteriores del usuario)
 - Nombre correcto de la materia: "Métodos Matemáticos Computacionales para Ciencia de Datos".
 - Pendiente: presentación (diapositivas en PDF, poco texto) y preparación de preguntas.
 - Instrucción: todo el contexto que el usuario proporcione se agrega a la carpeta contexto/ y se sube a GitHub.
+- Solicitud posterior: agregar en el proyecto una parte de "regresar con PCA a la matriz" (reconstrucción de la matriz de datos con k componentes). Se ubicó en el reporte en 3.5.6 (resultados, dentro de PCA), con su ecuación en 1.4.7 y su descripción en 2.5; código en el bloque "reconstruccion" de codigo/exploracion_pca.py.

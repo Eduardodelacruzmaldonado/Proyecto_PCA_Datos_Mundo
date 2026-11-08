@@ -282,6 +282,14 @@ P("El criterio de Kaiser [3] conserva las componentes con λ mayor que 1 (con da
   "La simulación de Horn [4] genera muchas matrices de datos aleatorios sin estructura, del mismo tamaño que la nuestra, calcula sus valores propios y conserva las componentes cuyo λ supera al del azar; aquí usamos 500 simulaciones y el percentil 95. "
   "El criterio de varianza acumulada toma el menor número de componentes que explica al menos 80 %. El gráfico de sedimentación (<i>scree plot</i>) ayuda a ver dónde la curva de valores propios deja de bajar con fuerza.")
 
+H3("Reconstrucción de la matriz con k componentes")
+P("Con solo las primeras <i>k</i> componentes se puede volver a la matriz de datos:")
+ecuacion(r'$\hat{Z}_k=T_k\,V_k^{\top}\qquad\qquad \hat{X}_k=\hat{Z}_k\,D+\mathbf{1}\,\bar{x}^{\top}$', "eq_recon")
+P("Aquí <i>T<sub>k</sub></i> y <i>V<sub>k</sub></i> son las primeras <i>k</i> columnas de <i>T</i> y de <i>V</i>, <i>Ẑ<sub>k</sub></i> es la matriz estandarizada aproximada, <i>D</i> es la matriz diagonal con las desviaciones estándar <i>s</i> de cada variable, "
+  "<b>1</b> es un vector columna de unos y <i>x</i> con barra es el vector de medias. Si además se aplicó el logaritmo, se deshace con <i>x</i> = 10<super><i>y</i></super> − 1. Con <i>k</i> = <i>p</i> la reconstrucción es exacta; con <i>k</i> &lt; <i>p</i> se pierde justo la varianza de las componentes descartadas:")
+ecuacion(r'$\frac{\Vert Z-\hat{Z}_k\Vert_F^2}{n-1}=\lambda_{k+1}+\cdots+\lambda_p$', "eq_recon_err")
+P("donde ‖·‖<sub>F</sub> es la norma de Frobenius (la raíz de la suma de los cuadrados de todas las entradas de la matriz). Esto da una medida directa de lo que cuesta quedarse con <i>k</i> componentes.")
+
 # ================================================================ 4
 H1("Análisis experimental")
 P("Esta sección describe qué se hizo con los datos antes de analizarlos y sobre qué base se obtuvo cada resultado de la sección 3. El tratamiento tiene cuatro pasos: contar y tratar los valores faltantes, decidir qué variables y países se quedan, imputar los vacíos restantes y transformar las variables muy asimétricas. Las gráficas de la sección 3.1 se hicieron con los datos originales, antes de modificar nada, para mostrar la información tal como viene en la fuente.")
@@ -335,6 +343,8 @@ P("<b>Correlaciones (3.4).</b> Se calcularon sobre la base transformada (224 × 
 P("<b>PCA (3.5).</b> Se aplicó a la base transformada y estandarizada. Calculamos la matriz de covarianza, extrajimos valores y vectores propios con <i>numpy.linalg.eigh</i> y los ordenamos de mayor a menor. El signo de una componente es arbitrario, así que fijamos una convención (CP1 con signo positivo en el PIB per cápita). "
   "Verificamos el cálculo con <i>sklearn.decomposition.PCA</i> (los valores propios coinciden) y comprobamos que las componentes no están correlacionadas. La simulación de Horn usa 500 repeticiones con semilla fija, de modo que el resultado se puede reproducir. "
   "El programa toma como número de componentes la mediana de los tres criterios (4, 2 y 5, por lo que resulta 4); la justificación detallada está en la sección 3.5.")
+P("<b>Reconstrucción (3.5).</b> Con las puntuaciones <i>T</i> y los vectores propios <i>V</i> se reconstruye la matriz estandarizada con <i>k</i> componentes, se deshacen la estandarización y el logaritmo, y se compara con la base depurada. "
+  "El error se mide con la norma de la diferencia entre matrices y, variable por variable, con el R² en la escala original (1 menos la suma de cuadrados del error entre la suma de cuadrados total).")
 P("<b>Comparación con y sin estandarización (3.6).</b> Se repite el mismo cálculo sobre la misma base transformada, una vez con los datos solo centrados (matriz de covarianza) y otra con datos estandarizados (matriz de correlación). Por eso, \"sin estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada. "
   "Todo el código está en el archivo <i>exploracion_pca.py</i>.")
 
@@ -425,7 +435,7 @@ P("Un caso aparte es migración neta, con 50 atípicos. Aquí el criterio engañ
   "Mortalidad (16) y alfabetización (16) se mantienen por la misma razón: son países reales con situaciones distintas, como el sur de África con alta mortalidad.")
 
 # ================================================================ 7
-H3("Correlaciones y relación entre variables")
+H2("Correlaciones y relación entre variables")
 H3("Covarianza y correlación de Pearson")
 P("Como se vio en la sección 3.2, la covarianza depende de las unidades. El coeficiente de correlación de Pearson la divide entre las desviaciones estándar de ambas variables:")
 ecuacion('$r(X,Y)=\\frac{\\mathrm{Cov}(X,Y)}{\\sigma(X)\\,\\sigma(Y)}$', "eq_pearson")
@@ -524,11 +534,34 @@ P(f"Las regiones se ordenan sobre la CP1 como cabría esperar. Las puntuaciones 
   f"Asia y Cercano Oriente {gm['Asia y Cercano Oriente']:.2f}, CEI {gm['CEI']:.2f} y África {gm['África']:.2f}. Los puntos más altos en la CP1 son {', '.join(R['cp1_extremos']['alto'])}, y los más bajos "
   f"{', '.join(R['cp1_extremos']['bajo'])}. Que una variable construida solo con números reproduzca la geografía del desarrollo es una señal de que las componentes recogen estructura real y no ruido.")
 
+H3("Regresar a la matriz original: reconstrucción con k componentes")
+P("Una forma de juzgar la reducción es volver de las componentes a la matriz de datos y comparar con la original. Reconstruimos la matriz estandarizada con las primeras <i>k</i> componentes, deshacemos la estandarización y el logaritmo y medimos el error. "
+  "Con las 13 componentes se recupera exactamente la matriz original (lo verificamos numéricamente), así que toda la pérdida viene de las componentes que se descartan.")
+codigo("reconstruccion")
+figura("fig_recon.png", W, "Izquierda: porcentaje de la varianza que no se recupera según el número de componentes conservadas. Derecha: R² de cada variable, en su escala original, al reconstruir con 2 y con 4 componentes.")
+_e = R["err_rel"]
+_r4 = R["r2_k"][str(R["k"])]
+_o = sorted(_r4.items(), key=lambda kv: -kv[1])
+_mej = ", ".join(f"{n} ({v:.2f})" for n, v in _o[:5])
+_peo = ", ".join(f"{n} ({v:.2f})" for n, v in _o[-3:])
+P(f"El error relativo baja de {_e[0]:.2f} con una componente a {_e[3]:.2f} con cuatro. Su cuadrado es igual a 1 menos la varianza acumulada (también lo comprobamos), de modo que con cuatro componentes se deja de recuperar {100 * (1 - R['acum_z'][3]):.1f} % de la varianza, justo lo que predice la ecuación de la sección 1.4.")
+P(f"Variable por variable, con cuatro componentes se recuperan bien {_mej}. Se recuperan peor {_peo}: son variables con colas muy largas, en las que unos pocos territorios (Monaco, Macau, islas pequeñas) concentran la varianza, y el R² se mide en la escala original, donde esos casos pesan mucho. "
+  "Con solo dos componentes, la tierra cultivable y la densidad casi no se recuperan, lo que coincide con que su información está en la CP3 y la CP4.")
+_rp = R["recon_paises"]
+_nom = {"Mexico": "México", "Germany": "Alemania", "Niger": "Níger"}
+filas = [["País", "Variable", "Original", "k = 2", "k = 4"]]
+for i, pais in enumerate(_rp["paises"]):
+    for j, var in enumerate(_rp["vars"]):
+        filas.append([_nom[pais] if j == 0 else "", var, fmt(_rp["original"][i][j]), fmt(_rp["k2"][i][j]), fmt(_rp["k4"][i][j])])
+tabla(filas, [1.0, 1.6, 1.1, 1.1, 1.1], "Valores originales y reconstruidos con 2 y 4 componentes para tres países (escala original).")
+P("La reconstrucción de México con cuatro componentes es razonable (PIB per cápita de 9,288 contra 9,000 reales). Los extremos muestran el límite del método: para Alemania, la mortalidad infantil reconstruida con dos componentes es negativa, y para Níger el PIB per cápita sale negativo con dos y con cuatro componentes. "
+  "El PCA es lineal y no sabe que estas variables no pueden ser negativas, por lo que en países muy alejados del promedio la reconstrucción puede dar valores imposibles. Es un aviso para no interpretar la matriz reconstruida como datos, sino como una aproximación.")
+
 # ================================================================ 9
-H3("Estandarización: con y sin")
+H2("Estandarización: con y sin")
 H3("Por qué importa la escala")
 P("El PCA maximiza la varianza, y la varianza depende de las unidades. Si una variable está en miles de dólares y otra en fracciones entre 0 y 1, la primera aporta varianza varios órdenes de magnitud mayor solo por su escala. "
-  "La Tabla 9 muestra el rango y la varianza de cada variable en la base transformada.")
+  "La Tabla 10 muestra el rango y la varianza de cada variable en la base transformada.")
 filas = [["Variable", "Mínimo", "Máximo", "Rango", "Varianza"]]
 for d in R["rango"]:
     filas.append([d["nombre"], fmt(d["minimo"]), fmt(d["maximo"]), fmt(d["rango"]), fmt(d["varianza"])])
@@ -568,7 +601,7 @@ P(f"Los criterios para elegir componentes no coinciden (Kaiser {R['k_kaiser']}, 
   f"la CP3 y la CP4 tienen valores propios de {R['val_z'][2]:.2f} y {R['val_z'][3]:.2f}, apenas por encima de 1, por lo que son interpretables pero marginales. Por eso las dos primeras componentes son el resultado más firme.")
 P("Otras limitaciones: (1) en migración neta, 62 países tienen exactamente cero, y es probable que algunos de esos ceros sean datos no disponibles, lo que debilita su correlación con las demás variables; "
   f"(2) la imputación con la mediana regional reduce algo la varianza de las variables más afectadas (alfabetización, con 16 de {R['n_final']} países imputados); (3) los datos son de mediados de la década de 2000, de modo que las conclusiones describen ese periodo; "
-  "(4) la interpretación de la CP2, CP3 y CP4 es nuestra lectura de las cargas; (5) la clasificación en variables independientes y dependientes se apoya en correlaciones, que no prueban causalidad.")
+  "(4) la interpretación de la CP2, CP3 y CP4 es nuestra lectura de las cargas; (5) la clasificación en variables independientes y dependientes se apoya en correlaciones, que no prueban causalidad; (6) al regresar a la matriz original con cuatro componentes algunas variables se recuperan mal y, en países extremos como Níger, aparecen valores imposibles (negativos), porque el PCA es lineal y no sabe que el PIB o la densidad no pueden ser negativos.")
 H2("Cómo se podría mejorar el análisis")
 P("Con más tiempo se podría: tratar los ceros de migración neta como faltantes y repetir el análisis; comparar la imputación con la mediana regional contra otros métodos de imputación; "
   "repetir el PCA sin los territorios muy pequeños (Monaco, Macau, Singapore) para ver si cambian las componentes; actualizar los datos con fuentes más recientes; y usar las componentes como variables explicativas en un modelo para el PIB per cápita o la mortalidad infantil.")
@@ -581,6 +614,7 @@ P("Las correlaciones muestran un bloque de variables que describe el nivel de de
   "(tierra cultivable, cultivos permanentes, costa) se relacionan poco con él. Por eso las clasificamos como independientes y el bloque como dependiente, aclarando que se trata de una hipótesis y no de una prueba de causalidad.")
 P(f"Con datos estandarizados, cuatro componentes explican {100 * R['acum_z'][3]:.1f} % de la varianza. La primera (el {100 * R['prop_z'][0]:.1f} %) es un eje de desarrollo que ordena a las regiones de forma coherente. "
   "La elección de cuatro componentes se apoya en Kaiser y en la varianza acumulada, aunque la simulación de Horn sugiere solo dos, de modo que las dos primeras son las más firmes.")
+P("Al regresar a la matriz original con cuatro componentes se recuperan razonablemente las variables de desarrollo (mortalidad infantil, natalidad, teléfonos, PIB per cápita), pero no las geográficas de colas largas (densidad de población y costa/área); la reconstrucción es una aproximación y puede dar valores imposibles en países extremos.")
 P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas y pierde su utilidad. Limitaciones: los datos son de mediados de los años 2000; imputamos con la mediana regional una parte pequeña de los valores; "
   "y el cero de migración neta puede ser un dato faltante disfrazado. Una extensión natural sería ajustar un modelo para el PIB per cápita o la mortalidad infantil usando las componentes como predictores.")
 
