@@ -23,7 +23,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -152,11 +152,11 @@ def H3(texto):
 
 # Numeración automática de figuras y tablas en el orden en que aparecen
 ORDEN_FIG = (["categoricas", "faltantes", "log"] + [f"hb_{i:02d}" for i in range(len(estad))]
-             + ["atipicos", "cov", "corr", "comparacion", "contraste", "relaciones", "scree", "cargas",
+             + ["atipicos", "cov", "corr", "comparacion", "vec_pares", "relaciones", "scree", "cargas",
                 "biplot", "recon", "cp1", "planos"])
 F = {k: i + 1 for i, k in enumerate(ORDEN_FIG)}
-ORDEN_TAB = ["variables", "descartadas", "descriptivas", "covarianza", "atipicos", "pares", "menos",
-             "clasificacion", "valores", "recon", "rango", "comparacion"]
+ORDEN_TAB = ["variables", "descartadas", "descriptivas", "cov_completa", "covarianza", "atipicos", "pares", "menos",
+             "eig_pares", "clasificacion", "valores", "recon", "rango", "comparacion"]
 T = {k: i + 1 for i, k in enumerate(ORDEN_TAB)}
 
 
@@ -168,13 +168,15 @@ def figura(archivo, ancho, texto, clave):
     story.append(KeepTogether([Spacer(1, 4), img, Paragraph(f"Figura {F[clave]}. {texto}", pie)]))
 
 
-def tabla(clave, titulo, filas, anchos, encabezado=True, alinear_der=()):
-    datos = [[Paragraph(str(c), celda_b if (encabezado and i == 0) else celda) for c in fila]
-             for i, fila in enumerate(filas)]
+def tabla(clave, titulo, filas, anchos, encabezado=True, alinear_der=(), est_celda=None, est_cab=None, relleno=3):
+    personalizado = est_celda is not None              # la primera columna también va en negritas
+    est_celda, est_cab = est_celda or celda, est_cab or celda_b
+    datos = [[Paragraph(str(c), est_cab if (encabezado and i == 0) or (personalizado and j == 0) else est_celda)
+              for j, c in enumerate(fila)] for i, fila in enumerate(filas)]
     t = Table(datos, colWidths=anchos, repeatRows=1 if encabezado else 0, hAlign="CENTER")
     estilo = [("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 2.2),
-              ("BOTTOMPADDING", (0, 0), (-1, -1), 2.2), ("LEFTPADDING", (0, 0), (-1, -1), 3),
-              ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+              ("BOTTOMPADDING", (0, 0), (-1, -1), 2.2), ("LEFTPADDING", (0, 0), (-1, -1), relleno),
+              ("RIGHTPADDING", (0, 0), (-1, -1), relleno),
               ("LINEABOVE", (0, 0), (-1, 0), .9, colors.black),
               ("LINEBELOW", (0, -1), (-1, -1), .9, colors.black)]
     if encabezado:
@@ -213,6 +215,18 @@ def bloque_codigo(nombre, ancho_max=112):
     story.append(Preformatted("\n".join(lineas), codigo))
 
 
+def mat(tex, clave, tam=10.5):
+    """Fórmula pequeña dentro de un párrafo: imagen alineada con la línea base del texto."""
+    from matplotlib import mathtext
+    from matplotlib.font_manager import FontProperties
+    ruta = FORM / f"en_linea_{clave}.png"
+    prof = mathtext.math_to_image(tex, str(ruta), prop=FontProperties(size=tam, math_fontfamily="stix"), dpi=300)
+    from reportlab.lib.utils import ImageReader
+    w, h = ImageReader(str(ruta)).getSize()
+    return (f'<img src="{ruta}" width="{w * 72 / 300:.2f}" height="{h * 72 / 300:.2f}" '
+            f'valign="{-prof * 72 / 300:.2f}"/>')
+
+
 def formula(clave, tex, tam=12.5):
     """Dibuja una fórmula con mathtext de matplotlib y la inserta centrada."""
     ruta = FORM / f"{clave}.png"
@@ -222,7 +236,8 @@ def formula(clave, tex, tam=12.5):
     plt.close(fig)
     from reportlab.lib.utils import ImageReader
     w, h = ImageReader(str(ruta)).getSize()
-    img = Image(str(ruta), width=w * 72 / 300, height=h * 72 / 300)
+    escala = min(1.0, ANCHO / (w * 72 / 300))
+    img = Image(str(ruta), width=w * 72 / 300 * escala, height=h * 72 / 300 * escala)
     story.append(Spacer(1, 3)); story.append(img); story.append(Spacer(1, 5))
 
 
@@ -235,16 +250,21 @@ class Reporte(BaseDocTemplate):
                          bottomMargin=66, title="Exploración de datos y componentes principales",
                          author="De La Cruz Maldonado José Eduardo; López Reyes Jorge", **kw)
         marco = Frame(72, 66, ANCHO, letter[1] - 72 - 66, id="marco")
+        ancho_h, alto_h = landscape(letter)
+        marco_h = Frame(72, 66, ancho_h - 144, alto_h - 72 - 66, id="marco_h")
         self.addPageTemplates([PageTemplate("portada", [marco]),
-                               PageTemplate("normal", [marco], onPage=self.pie_de_pagina)])
+                               PageTemplate("normal", [marco], onPage=self.pie_de_pagina),
+                               PageTemplate("horizontal", [marco_h], onPage=self.pie_de_pagina,
+                                            pagesize=landscape(letter))])
 
     @staticmethod
     def pie_de_pagina(canv, doc):
         canv.saveState()
-        canv.setStrokeColorRGB(.6, .6, .6); canv.setLineWidth(.4); canv.line(72, 54, 540, 54)
+        derecha = canv._pagesize[0] - 72
+        canv.setStrokeColorRGB(.6, .6, .6); canv.setLineWidth(.4); canv.line(72, 54, derecha, 54)
         canv.setFont("Serif", 8.5); canv.setFillColor(colors.HexColor("#444444"))
         canv.drawString(72, 39.6, "Métodos Matemáticos Computacionales para Ciencia de Datos")
-        canv.drawRightString(540, 39.6, str(doc.page))
+        canv.drawRightString(derecha, 39.6, str(doc.page))
         canv.restoreState()
 
     def afterFlowable(self, flowable):
@@ -298,7 +318,7 @@ P(f"Se realiza un análisis exploratorio de {R['n_paises']} países descritos po
   "imputación con la mediana regional y logaritmo en las variables de asimetría extrema) y se obtuvieron gráficas, medidas "
   "descriptivas, valores atípicos y matrices de covarianza y correlación, identificando las variables más y menos relacionadas. "
   "Luego se aplicó el análisis de componentes principales (PCA) con y sin estandarización, eligiendo el número de componentes "
-  f"con los criterios de Kaiser, Horn y varianza acumulada. Con datos estandarizados, cuatro componentes explican "
+  f"con el criterio de Kaiser. Con datos estandarizados, cuatro componentes explican "
   f"{100 * acum_z[k - 1]:.1f} % de la varianza y la primera ({100 * prop_z[0]:.1f} %) funciona como un eje de nivel de desarrollo; "
   f"sin estandarizar, la primera explica {100 * R['prop_s'][0]:.2f} % pero solo refleja el PIB per cápita por su escala. Por ello, "
   "estandarizar es indispensable cuando las variables tienen unidades distintas.")
@@ -325,27 +345,27 @@ H1("1. Introducción")
 H2("1.1 Objetivo e hipótesis de trabajo")
 P("El objetivo de este trabajo es realizar un análisis exploratorio del conjunto de datos <i>Countries of the World</i> [1] y, "
   "con la base ya depurada, determinar si los indicadores demográficos, económicos y geográficos de los países pueden "
-  "resumirse en unas pocas componentes principales sin perder demasiada información. El análisis sigue el flujo planteado "
-  "en clase: datos, exploración (gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), "
+  "resumirse en unas pocas componentes principales sin perder demasiada información. El análisis sigue el siguiente flujo "
+  "planteado: datos, exploración (gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), "
   "corrección de los datos cuando hace falta y reducción de dimensiones con PCA.")
-P("Partimos de dos hipótesis de trabajo que se retoman en la Discusión. <b>H1:</b> muchas variables miden en el fondo el nivel "
+P("Partimos de dos hipótesis de trabajo, que se retoman en la Discusión (sección 4). <b>H1:</b> muchas variables miden en el fondo el nivel "
   "de desarrollo de un país (salud, ingreso, educación, estructura económica), por lo que estarán fuertemente correlacionadas y "
   "unas pocas componentes bastarán para resumir buena parte de la varianza. <b>H2:</b> como las variables están en unidades muy "
   "distintas, el PCA sin estandarizar quedará dominado por la variable de mayor escala, mientras que con estandarización sí "
   "resumirá la estructura de los datos.")
 H2("1.2 Justificación y antecedentes")
 P("Los países se describen con decenas de indicadores y varios de ellos dicen casi lo mismo. Resumirlos en pocas dimensiones "
-  "permite comparar países, visualizarlos en un plano y usar menos variables en modelos posteriores. Además, este conjunto es un "
+  "permite comparar países, visualizarlos en un plano y usar menos variables en modelos posteriores. Además, este conjunto puede ser un "
   "buen caso para entender el PCA, porque la decisión de estandarizar o no cambia por completo el resultado.")
 P("El análisis de componentes principales es una técnica clásica para reducir dimensiones [2], y los criterios para decidir "
-  "cuántas componentes conservar se han estudiado desde hace décadas [3, 4]. Como antecedente de la idea de resumir el desarrollo "
-  "de un país con pocas dimensiones, el Índice de Desarrollo Humano del PNUD [5] combina salud, educación e ingreso en un solo "
+  "cuántas componentes conservar se han estudiado desde hace décadas [3, 10]. Como antecedente de la idea de resumir el desarrollo "
+  "de un país con pocas dimensiones, el Índice de Desarrollo Humano del PNUD [4] combina salud, educación e ingreso en un solo "
   "indicador; a diferencia del PCA, se construye con una fórmula fija y no a partir de la estructura de los datos.")
 H2("1.3 Origen y descripción de los datos")
 P("Los datos vienen del conjunto <i>Countries of the World</i>, publicado en Kaggle por el usuario fernandol "
   "(https://www.kaggle.com/datasets/fernandol/countries-of-the-world) [1]. Cada fila es un país o territorio y cada columna una "
   "característica. Por los valores que contiene (por ejemplo, China aparece con 1,313,973,713 habitantes), la información "
-  "corresponde a mediados de la década de 2000, así que las conclusiones describen ese periodo y no la situación actual.")
+  "corresponde a mediados de la década de 2000, así que las conclusiones describen ese periodo y no la actualidad.")
 P("El archivo usa coma como separador decimal (\"48,0\") y los nombres de país y de región traen espacios al final, por lo que "
   f"al leerlo indicamos <i>decimal=\",\"</i> y limpiamos los textos. La Tabla {T['variables']} resume las columnas.")
 bloque_codigo("lectura")
@@ -379,14 +399,14 @@ figura("fig_categoricas.png", 431, f"Distribución de las dos variables categór
        "categoricas")
 P(f"La región con más países es {REG_ES[regs[0][0]]} ({regs[0][1]}), seguida de {REG_ES[regs[1][0]]} ({regs[1][1]}); "
   f"{REG_ES[regs[-1][0]]} ({regs[-1][1]}) es la más pequeña. En clima, el tipo {clima_max} concentra {clima[clima_max]} países.")
-H2("1.4 Herramientas y métodos")
-P("Todo el análisis se hizo en Python 3 con estos paquetes: pandas [6] (lectura del CSV con <i>read_csv</i>, imputación con "
-  "<i>groupby/transform</i> y <i>fillna</i>, y los métodos <i>mean, median, var, std, skew, cov</i> y <i>corr</i>); NumPy [7] "
+H2("1.4 Herramientas y métodos") # 1.4
+P("Todo el análisis se hizo en Python con estos paquetes: pandas [5] (lectura del CSV con <i>read_csv</i>, imputación con "
+  "<i>groupby/transform</i> y <i>fillna</i>, y los métodos <i>mean, median, var, std, skew, cov</i> y <i>corr</i>); NumPy [6] "
   "(matriz de covarianza con <i>numpy.cov</i>, valores y vectores propios con <i>numpy.linalg.eigh</i> y <i>log10</i>); "
-  "Matplotlib [8] y seaborn [9] (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy (valor crítico de la "
-  "correlación) y scikit-learn [10], cuya clase <i>PCA</i> usamos solo para verificar nuestro cálculo. Las herramientas que "
-  "aparecen en el pizarrón de clase (matrices de covarianza y correlación, PCA y estandarización) se describen a grandes "
-  "rasgos; las demás (transformación logarítmica, criterio del rango intercuartílico y simulación de Horn) se explican con más detalle.")
+  "Matplotlib [7] y seaborn [8] (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy (valor crítico de la "
+  "correlación) y scikit-learn [9], cuya clase <i>PCA</i> usamos solo para verificar nuestro cálculo. Las herramientas "
+  "vistas en clase (matrices de covarianza y correlación, PCA y estandarización) se describen a grandes "
+  "rasgos; las demás (transformación logarítmica y criterio del rango intercuartílico) se explican con más detalle.")
 H3("1.4.1 Medidas descriptivas y covarianza")
 P("La media, la varianza y la covarianza de dos variables X e Y medidas en <i>n</i> países son:")
 F_MEDIA = r"$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i\qquad\qquad s^2(X)=\frac{\sum_{i=1}^{n}(x_i-\bar{x})^2}{n-1}$"
@@ -422,18 +442,15 @@ P(f"Aquí <i>S</i> es la matriz de covarianza de los datos (de <i>p</i> × <i>p<
   "estandarizados, es la matriz de correlación. La carga de la variable <i>i</i> en la componente <i>j</i> es "
   "<i>v<sub>ij</sub></i>·√λ<sub>j</sub>, y equivale a la correlación entre ambas cuando se parte de datos estandarizados.")
 
-H3("1.4.6 Cuántas componentes conservar")
 p_ = len(VARS)
+
+H3("1.4.6 Cuántas componentes conservar")
 P(f"El PCA produce tantas componentes como variables (aquí <i>p</i> = {p_}) y solo conservándolas todas se mantiene el 100 % de "
   "la varianza; reducir dimensiones significa quedarse con las primeras <i>k</i> y descartar las demás. La elección de <i>k</i> es "
   "un compromiso entre dos errores. Si se conservan <b>muy pocas</b>, se pierde estructura real de los datos. Si se conservan "
   "<b>demasiadas</b>, se incluyen componentes que solo reflejan el ruido del muestreo o la variación propia de una sola variable: "
-  "no se pueden interpretar y cambiarían con otra muestra de países. Como no hay una regla única, usamos varios criterios con "
-  "lógicas distintas y comparamos sus resultados. Damos el papel principal a los criterios de Kaiser y de Horn por dos razones: "
-  "son reglas numéricas y reproducibles, que no dependen de apreciar a ojo una gráfica, y se complementan, porque Kaiser compara "
-  "cada valor propio con una referencia teórica fija y Horn lo compara con una referencia obtenida del azar para el tamaño de "
-  "nuestra muestra.")
-P("<b>Criterio de Kaiser [3, 11].</b> Con datos estandarizados se conservan las componentes cuyo valor propio es mayor que 1:")
+  "no se pueden interpretar y cambiarían con otra muestra de países.")
+P("<b>Criterio de Kaiser [3, 10].</b> Con datos estandarizados se conservan las componentes cuyo valor propio es mayor que 1:")
 formula("kaiser", r"$\mathrm{tr}(R)=\lambda_1+\lambda_2+\cdots+\lambda_p=p\quad\Rightarrow\quad\bar{\lambda}=1;"
                   r"\qquad\mathrm{se\ conserva\ la\ CP}_j\ \mathrm{si}\ \lambda_j>1$", 12)
 P("La justificación es la siguiente. Al estandarizar, cada variable tiene varianza 1, así que la varianza total es la traza de la "
@@ -444,28 +461,7 @@ P("La justificación es la siguiente. Al estandarizar, cada variable tiene varia
   "sin estandarizar, el umbral equivalente sería el promedio de los valores propios de <i>S</i>, que en estos datos domina el PIB "
   "per cápita (sección 3.6). Su limitación es que el umbral 1 vale para la población y no toma en cuenta el tamaño de la muestra: "
   "aunque las variables fueran independientes, los valores propios muestrales se dispersan alrededor de 1 y los primeros lo superan "
-  f"solo por azar. Con {R['n_depurados']} países y {p_} variables de puro ruido salen en promedio {R['ruido_mayor_1']:.1f} valores "
-  "propios mayores que 1, de modo que Kaiser tiende a conservar más componentes de las necesarias.")
-P("<b>Simulación (análisis paralelo) de Horn [4].</b> Corrige esa limitación comparando cada valor propio con el que produce el "
-  "azar. El procedimiento es: (1) se generan <i>B</i> matrices de números aleatorios normales independientes, del mismo tamaño que "
-  f"nuestros datos ({R['n_depurados']} × {p_}), es decir, datos sin ninguna correlación real; (2) a cada una se le calcula la matriz de "
-  "correlación y sus valores propios, ordenados de mayor a menor; (3) para cada posición <i>j</i> se toma un valor de referencia "
-  "de los <i>B</i> valores simulados, ya sea el percentil 95, que es la versión más exigente [12], o la media, que es la propuesta "
-  "original de Horn; y (4) se conservan las componentes cuyo λ<sub>j</sub> observado supera la referencia de su misma posición:")
-formula("horn", r"$\mathrm{se\ conserva\ la\ CP}_j\ \mathrm{si}\ \lambda_j>P_{95}\left(\lambda_j^{(1)},\lambda_j^{(2)},\ldots,\lambda_j^{(B)}\right)$", 12)
-P("donde λ<sub>j</sub><super>(b)</super> es el <i>j</i>-ésimo valor propio de la simulación <i>b</i>. La idea es que una componente "
-  "vale la pena solo si explica más varianza de la que explicaría por casualidad con este número de países y de variables. Cuando "
-  "<i>n</i> crece, los valores propios simulados se acercan a 1 y Horn coincide con Kaiser; con <i>n</i> finito, la referencia de "
-  "Horn baja con la posición en lugar de ser constante. En estudios de simulación, el análisis paralelo está entre los métodos que "
-  "mejor recuperan el número correcto de componentes, mientras que Kaiser tiende a sobrestimarlo [13].")
-P("<b>Cómo los usamos en este trabajo.</b> Aplicamos ambos criterios a los valores propios de la matriz de correlación (datos "
-  "transformados y estandarizados), con 500 simulaciones de Horn, semilla fija y el percentil 95; como comprobación también "
-  "reportamos la media de las simulaciones. Leemos los dos criterios como cotas: Kaiser marca un límite permisivo y Horn uno "
-  "exigente, que separa lo que con seguridad no es ruido. Los complementamos con el criterio de varianza acumulada, que toma el "
-  "menor número de componentes que explica al menos 80 %, y con el gráfico de sedimentación (<i>scree plot</i>), que ayuda a ver "
-  "dónde la curva de valores propios deja de bajar con fuerza. El programa toma como número de componentes la mediana de Kaiser, "
-  "Horn y varianza acumulada, y la sección 3.5.3 discute el resultado.")
-
+  "solo por azar.")
 H3("1.4.7 Reconstrucción de la matriz con k componentes")
 P("Con solo las primeras <i>k</i> componentes se puede volver a la matriz de datos:")
 formula("recon", r"$\hat{Z}_k=T_k\,V_k^{\top}\qquad\qquad \hat{X}_k=\hat{Z}_k\,D+\mathbf{1}\,\bar{x}^{\top}$")
@@ -483,9 +479,9 @@ P("donde ‖·‖<sub>F</sub> es la norma de Frobenius (la raíz de la suma de l
 # =============================================================================================
 H1("2. Análisis experimental")
 P("Esta sección describe qué se hizo con los datos antes de analizarlos y sobre qué base se obtuvo cada resultado de la sección 3. "
-  "El tratamiento tiene cuatro pasos: contar y tratar los valores faltantes, decidir qué variables y países se quedan, imputar los "
+  "El procedimiento tiene cuatro pasos: contar y tratar los valores faltantes, decidir qué variables y países se quedan, imputar los "
   "vacíos restantes y transformar las variables muy asimétricas. Las gráficas de la sección 3.1 se hicieron con los datos "
-  "originales, antes de modificar nada, para mostrar la información tal como viene en la fuente.")
+  "originales, antes de modificar nada, para mostrar la información tal cual viene en la fuente.")
 H2("2.1 Valores faltantes")
 falt = list(R["faltantes"].items())
 mas = [f"{N(v)} ({c} países, {pc:.1f} %)" for v, (c, pc) in falt[:5]]
@@ -530,7 +526,7 @@ P(f"Se imputaron {', '.join(f'{N(v)} ({c})' for v, c in imp[:3])}, {N(imp[3][0])
   "mediana reduce un poco la varianza real de esas variables, lo cual dejamos señalado como limitación.")
 bloque_codigo("depuracion")
 H2("2.4 Transformación de variables muy asimétricas")
-P("Esta es la flecha de \"corregir datos\" del esquema del pizarrón: los resultados de la sección 3.1 muestran que algunas variables "
+P("Los resultados de la sección 3.1 muestran que algunas variables "
   "tienen colas derechas extremas que, al calcular correlaciones y componentes, dejarían que unos pocos países decidan el resultado. "
   "Con un criterio fijo, aplicamos <i>log10(x + 1)</i> a las variables con coeficiente de asimetría mayor o igual a 2 en valor "
   "absoluto. Elegimos el logaritmo porque comprime las colas derechas y respeta el orden de los países, y sumamos 1 porque estas "
@@ -544,41 +540,46 @@ P(f"La asimetría de densidad baja de {al[VARS[0]][0]:.2f} a {al[VARS[0]][1]:.2f
   "tienen asimetría menor que 2 y se dejan en su escala original para conservar su interpretación.")
 H2("2.5 Cómo se obtuvo cada resultado")
 P(f"<b>Gráficas de cada variable (3.1).</b> Se hicieron con los datos originales ({R['n_paises']} filas, omitiendo los vacíos de "
-  "cada variable): un histograma de 20 intervalos con líneas de media y mediana, y un diagrama de caja, con la función "
-  "<i>hist_box</i> del programa.")
-P(f"<b>Medidas descriptivas y covarianza (3.2) y atípicos (3.3).</b> Se calcularon sobre la base depurada ({R['n_depurados']} países "
+  "cada variable): un histograma de 20 intervalos con líneas de media y mediana, y un diagrama "
+  "<i>box plot</i>.")
+P("<b>Coeficiente de asimetría (2.4 y 3.1).</b> Para medir qué tan cargada hacia un lado está la distribución de cada variable "
+  "usamos el coeficiente de asimetría muestral ajustado de Fisher-Pearson, que es el que calcula el método <i>skew</i> de pandas:")
+formula("asimetria", r"$g=\dfrac{n}{(n-1)(n-2)}\sum_{i=1}^{n}\dfrac{(x_i-\bar{x})^{3}}{s^{3}}$")
+P("donde <i>n</i> es el número de países con dato en la variable, <i>x<sub>i</sub></i> es el valor de la variable en el país "
+  "<i>i</i>, " + mat(r"$\bar{x}$", "xbar") + " es su media y <i>s</i> su desviación estándar muestral (calculada con <i>n</i> − 1). Cada término mide a "
+  "cuántas desviaciones estándar está un país de la media y lo eleva al cubo, de modo que conserva el signo y da mucho más peso "
+  "a los valores alejados; el factor <i>n</i>/((<i>n</i> − 1)(<i>n</i> − 2)) corrige el sesgo que tiene esta medida en muestras "
+  "pequeñas. Si <i>g</i> = 0, la distribución es simétrica; si <i>g</i> &gt; 0, tiene una cola larga hacia la derecha (la media "
+  "queda por encima de la mediana), y si <i>g</i> &lt; 0, la cola está a la izquierda. Con este coeficiente se decidió qué "
+  "variables transformar con logaritmo (|<i>g</i>| ≥ 2, sección 2.4) y se describe cada variable en la sección 3.1.")
+P(f"<b>Medidas descriptivas, covarianza y atípicos. (3.2)</b> Se calcularon sobre la base depurada ({R['n_depurados']} países "
   f"× {p_} variables), antes de transformar, con <i>mean, median, var, std</i> y <i>cov</i>. Los atípicos se contaron con el "
-  "criterio del RIC antes y después de la transformación logarítmica; los diagramas de caja comparativos usan valores z para que "
-  "las variables sean comparables.")
+  "criterio del RIC (Rango Intercuartílico) antes y después de la transformación logarítmica.")
 P(f"<b>Correlaciones (3.4).</b> Se calcularon sobre la base transformada ({R['n_depurados']} × {p_}) con "
-  "<i>corr(method=\"pearson\")</i>. La selección de las variables más y menos correlacionadas usa criterios explícitos (sección "
-  "3.4.3). La clasificación en variables independientes y dependientes se hizo a partir del significado de cada variable y de su "
-  "mayor correlación con las demás; es una hipótesis razonada, no una prueba.")
+  "<i>corr(method=\"pearson\")</i>. La selección de las variables más y menos correlacionadas usa criterios explícitos. La clasificación en variables independientes y dependientes se hizo a partir del significado de cada variable y de su "
+  "mayor correlación con las demás.")
+
 P("<b>PCA (3.5).</b> Se aplicó a la base transformada y estandarizada. Calculamos la matriz de covarianza, extrajimos valores y "
-  "vectores propios con <i>numpy.linalg.eigh</i> y los ordenamos de mayor a menor. El signo de una componente es arbitrario, así que "
-  "fijamos una convención (CP1 con signo positivo en el PIB per cápita). Verificamos el cálculo con <i>sklearn.decomposition.PCA</i> "
-  "(los valores propios coinciden) y comprobamos que las componentes no están correlacionadas. La simulación de Horn usa 500 "
-  "repeticiones con semilla fija, de modo que el resultado se puede reproducir. El programa toma como número de componentes la "
-  f"mediana de los tres criterios ({R['k_kaiser']}, {R['k_horn']} y {R['k_80']}, por lo que resulta {k}); la justificación "
-  "detallada está en la sección 3.5.3.")
+  "vectores propios con <i>numpy.linalg.eigh</i> y los ordenamos de mayor a menor. Verificamos el cálculo con <i>sklearn.decomposition.PCA</i> "
+  "(los valores propios coinciden) y comprobamos que las componentes no están correlacionadas. El número de componentes se "
+  f"eligió con el criterio de Kaiser (valores propios mayores que 1), que da {k}; la justificación detallada está en la "
+  "sección 3.5.3.")
 P("<b>Reconstrucción (3.5.6).</b> Con las puntuaciones <i>T</i> y los vectores propios <i>V</i> se reconstruye la matriz estandarizada "
-  "con <i>k</i> componentes, se deshacen la estandarización y el logaritmo, y se compara con la base depurada. El error se mide con "
-  "la norma de la diferencia entre matrices y, variable por variable, con el R² en la escala original (1 menos la suma de "
-  "cuadrados del error entre la suma de cuadrados total).")
+  "con <i>k</i> componentes, se deshacen la estandarización y el logaritmo, y se compara con la base. El error se mide con "
+  "la norma de la diferencia entre matrices.")
 P("<b>Comparación con y sin estandarización (3.6).</b> Se repite el mismo cálculo sobre la misma base transformada, una vez con los "
   "datos solo centrados (matriz de covarianza) y otra con datos estandarizados (matriz de correlación). Por eso, \"sin "
-  "estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada. Todo el "
-  "código está en el archivo <i>exploracion_pca.py</i>.")
+  "estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada.")
 
 # =============================================================================================
 # 3. RESULTADOS
 # =============================================================================================
 H1("3. Resultados")
 P("Los resultados se presentan en el orden del flujo de trabajo: gráficas de cada variable (3.1), medidas descriptivas (3.2), "
-  "valores atípicos (3.3), correlaciones (3.4), componentes principales (3.5) y comparación con y sin estandarización (3.6). Cada "
-  "resultado lleva una lectura breve; la comparación con las hipótesis, las limitaciones y las mejoras posibles se discuten en la sección 4.")
+  "valores atípicos (3.3), correlaciones (3.4), componentes principales (3.5) y estandarización (3.6). Cada resultado lleva una "
+  "explicación breve; la comparación con las hipótesis, las limitaciones y las mejoras posibles se discuten en la sección 4.")
 H2("3.1 Gráficas de cada característica")
-P("Antes de modificar nada, graficamos cada variable numérica con un histograma y un diagrama de caja. En el histograma la línea "
+P("Antes de modificar nada, graficamos cada variable numérica con un histograma y un <i>box plot</i>. En el histograma la línea "
   "discontinua marca la media y la continua la mediana; cuando están muy separadas, la distribución es asimétrica. En el diagrama de "
   "caja, la caja va del primer al tercer cuartil, los bigotes llegan hasta 1.5 veces el rango intercuartílico y los círculos son "
   "valores atípicos. Las variables se grafican con los datos originales, con los vacíos omitidos en cada una.")
@@ -586,7 +587,7 @@ bloque_codigo("histogramas")
 top3 = R["top3"]
 DESCRIP = {
     "Population": "Unos pocos países enormes (China, India, Estados Unidos) contrastan con una mayoría de países pequeños.",
-    "Area (sq. mi.)": f"Pocos países ocupan superficies muy grandes ({', '.join(top3['Area (sq. mi.)'])}); la mayoría son pequeños o islas.",
+    "Area (sq. mi.)": f"Pocos países ocupan superficies muy grandes ({', '.join(top3['Area (sq. mi.)'])}); la mayoría son pequeños.",
     "Pop. Density (per sq. mi.)": "Casi todos los países tienen pocas centenas de habitantes por milla cuadrada, pero territorios "
                                   f"diminutos como {top3['Pop. Density (per sq. mi.)'][0]}, {top3['Pop. Density (per sq. mi.)'][1]} o "
                                   f"{top3['Pop. Density (per sq. mi.)'][2]} llegan a miles.",
@@ -612,8 +613,8 @@ DESCRIP = {
 for _, fila in estad.iterrows():
     atip = int(fila["atip"])
     atip_txt = f"{atip} valor atípico" if atip == 1 else f"{atip} valores atípicos"
-    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]} Asimetría {fila['asim']:.1f}; media "
-                                   f"{num(fila['media'])} frente a mediana {num(fila['mediana'])}; {atip_txt} por el criterio "
+    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]} Asimetría {fila['asim']:.1f}; media de "
+                                   f"{num(fila['media'])} frente a la mediana {num(fila['mediana'])}; {atip_txt} por el criterio "
                                    "del rango intercuartílico.", fila["archivo"][:-4])
 asim = estad.set_index("var")["asim"]
 muy_asim = asim[asim.abs() >= 3].sort_values(ascending=False)
@@ -624,10 +625,9 @@ P("En conjunto, casi todas las variables tienen asimetría positiva (la media es
 
 # 3.2 ------------------------------------------------------------------------------------------------------
 H2("3.2 Medidas descriptivas")
-P(f"Calculamos las medidas descriptivas con las {p_} variables elegidas, ya depuradas pero todavía en su escala original (así se "
-  "pueden interpretar). La media resume el centro, pero se mueve con los valores extremos; la mediana no. Por eso comparar ambas "
-  "dice si hay asimetría. La varianza mide la dispersión alrededor de la media, y su raíz cuadrada (desviación estándar) está en "
-  "las mismas unidades que la variable:")
+P(f"Calculamos las medidas descriptivas con las {p_} variables elegidas, ya depuradas pero todavía en su escala original (para "
+  "interpretarlas). La media resume el centro, pero se mueve con los valores extremos; la mediana no. Por eso comparar ambas "
+  "dice si hay asimetría. La varianza mide la dispersión alrededor de la media:")
 formula("media_varianza_2", F_MEDIA)
 formula("covarianza_2", F_COV)
 P("Los símbolos son los definidos en la sección 1.4: <i>n</i> es el número de países, <i>x<sub>i</sub></i> y <i>y<sub>i</sub></i> "
@@ -642,16 +642,37 @@ tabla("descriptivas", f"Medidas descriptivas de las {p_} variables elegidas ({R[
 mayor_media = [v for v in VARS if desc.loc[v, "media"] > desc.loc[v, "mediana"]]
 menor_media = [v for v in VARS if v not in mayor_media]
 cst, den, pib = "Coastline (coast/area ratio)", "Pop. Density (per sq. mi.)", "GDP ($ per capita)"
-P(f"La media supera a la mediana en {len(mayor_media)} de las {p_} variables (todas salvo {lista([n_(v) for v in menor_media])}), lo "
+P(f"La media supera a la mediana en {len(mayor_media)} de las {p_} variables (todas menos {lista([n_(v) for v in menor_media])}), lo "
   f"que confirma la asimetría derecha. El caso más claro es costa/área, con media {desc.loc[cst, 'media']:.1f} y mediana "
   f"{redondeo(desc.loc[cst, 'mediana'], 2)}, y también densidad de población ({desc.loc[den, 'media']:.0f} contra "
   f"{desc.loc[den, 'mediana']:.0f}). En el PIB per cápita la media ({desc.loc[pib, 'media']:,.0f}) casi duplica a la mediana "
-  f"({desc.loc[pib, 'mediana']:,.0f}): un país \"típico\" tiene un ingreso mucho menor al que sugiere el promedio.")
+  f"({desc.loc[pib, 'mediana']:,.0f}): un país \"cualquiera\" tiene un ingreso mucho menor al que sugiere el promedio.")
+def num_cov(x):
+    """Números de la matriz de covarianza completa: cifras completas y signo menos tipográfico."""
+    t = num(x) if abs(x) >= 1 else f"{x:.3g}"
+    return t.replace("-", "−")
+
+
+cov_abs = cov_orig.loc[VARS, VARS].abs()
+v_max = cov_orig.loc[VARS, VARS].stack().idxmax()
+P(f"La Tabla {T['cov_completa']} presenta la matriz de covarianza completa de las {p_} variables, en su escala original; la "
+  "diagonal contiene las varianzas y la matriz es simétrica, porque Cov(X, Y) = Cov(Y, X). Las magnitudes "
+  f"van de {num_cov(cov_abs.where(cov_abs > 0).min().min())} a "
+  f"{num_cov(cov_orig.loc[v_max])} (la varianza del {n_(v_max[0])}), es decir, cubren muchos órdenes de magnitud solo por las "
+  "unidades de cada variable.")
+celda_cov = ParagraphStyle("celda_cov", fontName="Serif", fontSize=5.4, leading=6.8, alignment=2)
+celda_cov_b = ParagraphStyle("celda_cov_b", fontName="Serif-Bold", fontSize=5.0, leading=6.2)
+cab_cov = {"Alfabetización": "Alfabeti-<br/>zación", "Cultivos permanentes": "Cultivos perma-<br/>nentes"}
+filas = [[""] + [cab_cov.get(N(v), N(v)) for v in VARS]] + [[N(a)] + [num_cov(cov_orig.loc[a, b]) for b in VARS]
+                                                             for a in VARS]
+tabla("cov_completa", f"Matriz de covarianza completa de las {p_} variables (escala original, {R['n_depurados']} países). "
+      "La diagonal contiene las varianzas.", filas, [66] + [(ANCHO - 66) / p_] * p_, est_celda=celda_cov, est_cab=celda_cov_b, relleno=1.5)
 clave = R["clave_cov"]
 filas = [[""] + [N(v) for v in clave]] + [[N(a)] + [num(cov_orig.loc[a, b]) for b in clave] for a in clave]
-tabla("covarianza", "Matriz de covarianza (escala original) de cinco indicadores de desarrollo. La diagonal contiene las varianzas.",
+tabla("covarianza", "Matriz de covarianza (escala original) de cinco indicadores de desarrollo, tomada de la Tabla "
+      f"{T['cov_completa']}. La diagonal contiene las varianzas.",
       filas, [98, 82, 72, 72, 72, 72])
-P("Elegimos estas cinco variables para mostrar la covarianza porque son las que, como veremos en la sección 3.4, más se relacionan "
+P("Estas cinco variables son las que, como veremos en la sección 3.4, más se relacionan "
   "entre sí. Los signos tienen sentido: el PIB per cápita covaría positivamente con los teléfonos y la alfabetización, y "
   "negativamente con la mortalidad infantil y la natalidad. Sin embargo, las magnitudes no son comparables entre pares: la "
   f"covarianza entre PIB y teléfonos ({num(cov_orig.loc[pib, 'Phones (per 1000)'])}) es enorme solo porque el PIB se mide en miles "
@@ -690,17 +711,17 @@ P(f"Un caso aparte es migración neta, con {mig[0]} atípicos. Aquí el criterio
   f"realmente extremos y la dejamos sin cambios. Mortalidad ({at['Deathrate'][0]}) y alfabetización ({at['Literacy (%)'][0]}) se "
   "mantienen por la misma razón: son países reales con situaciones distintas, como el sur de África con alta mortalidad.")
 
-# 3.4 -------------------------------------------------------------------------------------------------------
+# 3.3 -------------------------------------------------------------------------------------------------------
 H2("3.4 Correlaciones y relación entre variables")
 H3("3.4.1 Covarianza y correlación de Pearson")
-P("Como se vio en la sección 3.2, la covarianza depende de las unidades. El coeficiente de correlación de Pearson la divide entre "
+P("Como vimos, la covarianza depende de las unidades. El coeficiente de correlación de Pearson la divide entre "
   "las desviaciones estándar de ambas variables:")
 formula("pearson_2", F_PEARSON)
 exp_pib = int(math.floor(math.log10(R["var_pib_trans"])))
 P("Aquí σ(X) y σ(Y) son las desviaciones estándar de X y de Y. Así el resultado queda entre −1 y 1, sin unidades: valores cercanos "
   "a 1 indican que las variables crecen juntas, cercanos a −1 que una crece cuando la otra baja y cercanos a 0 que no hay relación "
   "lineal. A partir de aquí trabajamos con la base transformada (la que usaremos en el PCA). La Figura "
-  f"{F['cov']} muestra por qué la covarianza sola es difícil de leer: el PIB per cápita, con varianza del orden de "
+  f"{F['cov']} muestra por qué la covarianza sola es difícil de interpretar: el PIB per cápita, con varianza del orden de "
   f"10<super>{exp_pib}</super>, domina todo el mapa de color.")
 figura("fig_cov.png", 398, f"Matriz de covarianza de las {p_} variables (escala simétrica logarítmica para que se aprecien todas las "
                            "magnitudes).", "cov")
@@ -714,11 +735,11 @@ filas = [["Par de variables", "r"]] + [[f"{N(b)} y {n_(a)}", f"{r:.2f}"] for a, 
 tabla("pares", "Los ocho pares con mayor correlación en valor absoluto.", filas, [260, 60])
 r_cul_mi = corr.loc["Crops (%)", "Infant mortality (per 1000 births)"]
 P("Se forma un bloque claro: la natalidad, la mortalidad infantil y la proporción de agricultura se mueven juntas y en sentido "
-  "contrario al PIB, los teléfonos, la alfabetización y los servicios. Es decir, varias columnas están diciendo casi lo mismo, el "
-  "grado de desarrollo del país. En cambio, la tierra cultivable y los cultivos permanentes casi no se relacionan con ese bloque "
+  "contrario al PIB, los teléfonos, la alfabetización y los servicios. "
+  "En cambio, la tierra cultivable y los cultivos permanentes casi no se relacionan con ese bloque "
   f"(por ejemplo, |r| = {abs(r_cul_mi):.2f} entre cultivos permanentes y mortalidad infantil). Esta redundancia es lo que hace útil un PCA.")
 
-# 3.4.3 (nuevo) ---------------------------------------------------------------------------------------------
+# 3.4.3  ---------------------------------------------------------------------------------------------
 top4, bottom2, intens = R["top4"], R["bottom2"], R["intensidad"]
 grupos4 = R["grupos_4"]
 bloque_des = ["Infant mortality (per 1000 births)", "Birthrate", "Agriculture", "Literacy (%)", "GDP ($ per capita)",
@@ -755,15 +776,16 @@ filas = [["Par de variables", "r"]] + [[f"{N(b)} y {n_(a)}", f"{r:+.3f}"] for a,
 tabla("menos", "Los ocho pares con menor correlación en valor absoluto.", filas, [260, 60])
 bloque_codigo("mas_menos_correlacionadas")
 
-# 3.4.4 (nuevo) ---------------------------------------------------------------------------------------------
+# 3.3.3 ---------------------------------------------------------------------------------------------
 H3("3.4.4 Comparación gráfica de los vectores más y menos correlacionados")
 rez = [v for v in top4 if corr.loc[v, pib] < 0]
 des_ = [v for v in top4 if v not in rez]
 r_rez = [corr.loc[a, b] for i, a in enumerate(rez) for b in rez[i + 1:]]
 r_cruz = [corr.loc[a, b] for a in rez for b in des_]
 cg = R["cargas"]
-P(f"La Figura {F['comparacion']} compara por pares las cuatro variables más correlacionadas y la Figura {F['contraste']} las "
-  "contrasta con las dos menos correlacionadas. Ambas usan la base transformada, la misma del mapa de calor.")
+P(f"La Figura {F['comparacion']} compara por pares las cuatro variables más correlacionadas, y la Figura {F['vec_pares']} y la "
+  f"Tabla {T['eig_pares']} las contrastan con las dos menos correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) a través de los "
+  "valores y vectores propios de sus matrices de correlación. Todas usan la base transformada, la misma del mapa de calor.")
 figura("fig_comparacion_correlaciones.png", 430, "Comparación por pares de las cuatro variables más correlacionadas. Diagonal: "
        "distribución; abajo: dispersión con su recta de mínimos cuadrados (siena: <i>r</i> positivo; azul: <i>r</i> negativo); "
        "arriba: coeficiente de Pearson con el color del mapa de calor.", "comparacion")
@@ -779,37 +801,75 @@ P("<b>No todo es lineal.</b> La alfabetización se satura en el 100 % y la agric
   f"variación; por eso, en la sección 3.5.4, las cuatro tienen cargas grandes en la CP1 "
   f"({', '.join(f'{cg[v][0]:.2f}'.replace('-', '−') for v in top4)}).")
 bloque_codigo("figura_comparacion")
-largo = R["largo_circulo"]
-figura("fig_contraste_correlaciones.png", ANCHO, "Contraste entre las cuatro variables más correlacionadas (siena: bloque de "
-       "rezago; azul: alfabetización) y las dos menos correlacionadas (gris). (a) Submatriz de correlación. (b) Cargas en el plano "
-       "CP1–CP2, con la longitud de cada flecha entre paréntesis. (c) |<i>r</i>| promedio de cada variable con las demás. (d) Par "
-       "más correlacionado frente al par de las dos menos correlacionadas, en valores z.", "contraste")
-lt = [largo[v] for v in top4]
-cgb0, cgb1 = cg[bottom2[0]], cg[bottom2[1]]
-cp_b1 = max(range(4), key=lambda j: abs(cgb1[j]))
-socio_b1 = corr[bottom2[1]].drop(bottom2[1]).abs().idxmax()
-rank = sorted(intens, key=intens.get, reverse=True)
-P(f"<b>(a)</b> El bloque de 4 × 4 está lleno de colores intensos, mientras que las filas y columnas de {n_(bottom2[0])} y "
-  f"{n_(bottom2[1])} son casi blancas: su |<i>r</i>| con las cuatro variables no pasa de {R['r_bottom2_con_top4']:.2f} y entre ellas "
-  f"vale {R['r_bottom2']:.2f}. Geométricamente, sus vectores son casi perpendiculares a los otros cuatro y entre sí.")
-P("<b>(b)</b> Las coordenadas de cada flecha son sus cargas en la CP1 y la CP2, es decir, sus correlaciones con esas componentes "
-  "(sección 1.4.5); la longitud al cuadrado es la fracción de la varianza de la variable que explica ese plano. Las cuatro variables "
-  f"correlacionadas tienen longitudes de {min(lt):.2f} a {max(lt):.2f} (de {100 * min(lt) ** 2:.0f} % a {100 * max(lt) ** 2:.0f} % "
-  "de su varianza) y se alinean sobre el eje horizontal: la CP1 es justamente la dirección que comparten. La flecha de "
-  f"{n_(bottom2[0])} mide {largo[bottom2[0]]:.2f} ({100 * largo[bottom2[0]] ** 2:.0f} %): su información está en la CP3 y la CP4 "
-  f"(cargas de {cgb0[2]:.2f} y {cgb0[3]:.2f}). La de {n_(bottom2[1])} mide {largo[bottom2[1]]:.2f}, casi toda en la "
-  f"CP{cp_b1 + 1} ({cgb1[cp_b1]:.2f}), que comparte con {n_(socio_b1)} (<i>r</i> = {corr.loc[bottom2[1], socio_b1]:.2f}): se "
-  "relaciona poco con el resto, pero no está completamente aislada.")
-P(f"<b>(c)</b> En el ordenamiento por intensidad media, las cuatro variables están entre las siete más asociadas (de "
-  f"{min(intens[v] for v in top4):.2f} a {max(intens[v] for v in top4):.2f}; {n_(rank[1])}, con {intens[rank[1]]:.2f}, es la "
-  f"segunda) y las dos menos correlacionadas cierran la lista ({intens[bottom2[1]]:.2f} y {intens[bottom2[0]]:.2f}).")
-pf = R["par_fuerte"]
-P(f"<b>(d)</b> En valores z, la pendiente de la recta de regresión es exactamente <i>r</i>. {N(pf[1])} frente a {n_(pf[0])} se "
-  f"alinea sobre una recta de pendiente {pf[2]:.2f}; {n_(bottom2[0])} frente a {n_(bottom2[1])} forma una nube sin dirección "
-  f"(pendiente {R['r_bottom2']:.2f}).")
-P("En resumen, las variables muy correlacionadas son redundantes y el PCA las resume en una sola componente, mientras que las poco "
-  "correlacionadas tienen información propia que solo aparece en componentes posteriores. Por eso una o dos componentes no bastan "
-  "para resumir las trece variables, y decidir cuántas conservar requiere criterios formales (secciones 1.4.6 y 3.5.3).")
+ep = R["eig_pares"]
+e4, e2 = R["eig_top4"], R["eig_bottom2"]
+pp, pn, pb = R["pares_fig_eig"]
+busca = {(a, b): (r, vals, v1) for a, b, r, vals, v1 in ep}
+r_pp, l_pp, _ = busca[tuple(pp)]
+r_pn, l_pn, _ = busca[tuple(pn)]
+r_pb, l_pb, v_pb = busca[tuple(pb)]
+grado = lambda r: math.degrees(math.acos(r))
+sg = lambda x, d=2: f"{x:+.{d}f}".replace("-", "−")
+
+P("<b>Valores y vectores propios de las variables más y menos correlacionadas.</b> Para ver qué distingue a las variables muy "
+  "correlacionadas de las poco correlacionadas, conviene empezar por el caso más simple: dos "
+  "variables estandarizadas. Su matriz de correlación y su descomposición en valores y vectores propios son:")
+formula("par_eig", r"$R=\genfrac{(}{)}{0}{0}{1\quad r}{r\quad 1}\qquad\lambda_1=1+|r|,\quad\lambda_2=1-|r|\qquad"
+                   r"v\in\left\{\dfrac{(1,\ 1)}{\sqrt{2}},\ \dfrac{(1,\,-1)}{\sqrt{2}}\right\}$", 12)
+P("donde <i>r</i> es la correlación del par. Los vectores propios son siempre las dos diagonales, sin importar el valor de "
+  "<i>r</i>: el primero sigue la diagonal (1, 1)/√2 cuando <i>r</i> &gt; 0 y la (1, −1)/√2 cuando <i>r</i> &lt; 0. Lo que cambia "
+  "con la intensidad de la relación son los valores propios: λ<sub>1</sub> es la varianza de los países a lo largo de la diagonal "
+  "principal y λ<sub>2</sub> la varianza en la dirección perpendicular. Como λ<sub>1</sub> + λ<sub>2</sub> = 2, la primera "
+  "componente explica (1 + |<i>r</i>|)/2 de la varianza del par, desde 50 % cuando no hay correlación hasta 100 % cuando es "
+  f"perfecta. La Figura {F['vec_pares']} lo muestra con datos: el par más correlacionado positivamente y el más "
+  "correlacionado negativamente dentro de las cuatro variables, frente al par de las dos menos correlacionadas.")
+figura("fig_vectores_pares.png", ANCHO, "Vectores propios de la matriz de correlación de tres pares de variables, en valores z. "
+       "La flecha siena es <i>v</i><sub>1</sub> y la azul <i>v</i><sub>2</sub>; cada una mide 2√λ, y la elipse punteada abarca dos "
+       f"desviaciones estándar en cada dirección propia. (a) {N(pp[0])} y {n_(pp[1])}; (b) {n_(pn[0])} y {n_(pn[1])}; "
+       f"(c) {n_(pb[0])} y {n_(pb[1])}, las dos variables menos correlacionadas.", "vec_pares")
+
+P(f"En los paneles (a) y (b) la nube de países es una elipse alargada: λ<sub>1</sub> vale {l_pp[0]:.2f} y {l_pn[0]:.2f}, de modo "
+  f"que la primera componente concentra {50 * l_pp[0]:.0f} % y {50 * l_pn[0]:.0f} % de la varianza del par y la segunda apenas "
+  f"{50 * l_pp[1]:.0f} % y {50 * l_pn[1]:.0f} %. Las dos variables comparten casi toda su información, y el signo de <i>r</i> solo "
+  "decide si la elipse sigue la diagonal ascendente o la descendente. En el panel (c) la nube es casi un círculo: "
+  f"λ<sub>1</sub> = {l_pb[0]:.2f} y λ<sub>2</sub> = {l_pb[1]:.2f}, así que la \"dirección principal\" explica solo "
+  f"{50 * l_pb[0]:.0f} % y cualquier otra dirección explicaría prácticamente lo mismo; resumir ese par en una componente perdería casi la mitad de su información.")
+
+filas = [["Par de variables", "r", "λ<sub>1</sub>", "λ<sub>2</sub>", "% en CP1", "<i>v</i><sub>1</sub>"]]
+for a, b, r, vals, v1 in ep:
+    filas.append([f"{N(a)} y {n_(b)}", sg(r), f"{vals[0]:.3f}", f"{vals[1]:.3f}", f"{50 * vals[0]:.1f}",
+                  f"({sg(v1[0])}, {sg(v1[1])})"])
+tabla("eig_pares", "Valores propios y primer vector propio de la matriz de correlación de cada par: los seis pares de las "
+      "cuatro variables más correlacionadas y, en la última fila, el par de las dos menos correlacionadas.", filas,
+      [176, 46, 46, 46, 54, 100])
+lb = [vals[0] for a, b, r, vals, v1 in ep[:-1]]
+P(f"La Tabla {T['eig_pares']} extiende la comparación a los seis pares del bloque. En todos, λ<sub>1</sub> va de {min(lb):.2f} a "
+  f"{max(lb):.2f} ({50 * min(lb):.0f} % a {50 * max(lb):.0f} % de la varianza del par), mientras que en el par de las dos menos "
+  f"correlacionadas es {l_pb[0]:.2f} ({50 * l_pb[0]:.1f} %). El vector <i>v</i><sub>1</sub> solo cambia de signo en su segunda "
+  "coordenada según el signo de <i>r</i>. En el programa comprobamos que λ<sub>1</sub> = 1 + |<i>r</i>| y "
+  "λ<sub>2</sub> = 1 − |<i>r</i>| en todos los pares.")
+v4 = e4["vecs"]
+l4, l2 = e4["vals"], e2["vals"]
+c1 = [v4[i][0] for i in range(4)]
+P(f"<b>Las cuatro más correlacionadas.</b> Al tomar juntas las cuatro variables, en su matriz de correlación de 4 × 4, "
+  f"λ<sub>1</sub> = {l4[0]:.2f} concentra "
+  f"{25 * l4[0]:.1f} % de la varianza del grupo y los otros tres valores propios quedan muy por debajo de 1 ({l4[1]:.2f}, {l4[2]:.2f} y {l4[3]:.2f}): las cuatro variables "
+  "ocupan, en la práctica, una sola dimensión. Su vector propio, <i>v</i><sub>1</sub> = ("
+  + ", ".join(f"{sg(x)} {n_(v)}" for x, v in zip(c1, top4)) + "), reparte el peso casi por igual, con "
+  f"coeficientes de magnitud entre {min(abs(x) for x in c1):.2f} y {max(abs(x) for x in c1):.2f}, muy cerca de "
+  "1/√4 = 0.5, positivos para las variables de rezago y negativo para la alfabetización, por lo que la dirección principal es "
+  "un promedio de las cuatro y no una de ellas en particular; los vectores siguientes solo describen diferencias pequeñas, como "
+  f"lo que distingue a la agricultura del resto (<i>v</i><sub>2</sub>, coeficiente {sg(v4[2][1])}).")
+P(f"<b>Las dos menos correlacionadas.</b> En su matriz de correlación de 2 × 2, los valores propios ({l2[0]:.2f} y {l2[1]:.2f}) están pegados a 1, el valor que tendrían si no hubiera ninguna correlación, y explican "
+  f"{50 * l2[0]:.0f} % y {50 * l2[1]:.0f} % de la varianza. Sus vectores propios, ({sg(e2['vecs'][0][0])}, {sg(e2['vecs'][1][0])}) "
+  f"y ({sg(e2['vecs'][0][1])}, {sg(e2['vecs'][1][1])}), son las diagonales que impone la simetría de cualquier matriz de 2 × 2, "
+  "no una estructura de los datos: ninguna combinación resume mejor la información que las propias variables originales.")
+P("En resumen, las variables muy correlacionadas tienen un valor propio dominante y un vector propio que las combina a todas con "
+  "pesos parecidos, por lo que son redundantes y el PCA las resume en una sola componente; en el PCA de las trece variables, las "
+  "cuatro tienen cargas grandes en la CP1 (sección 3.5.4). Las poco correlacionadas tienen valores propios cercanos a 1: cada una "
+  "conserva información propia que solo aparece en componentes posteriores. Por eso una o dos componentes no bastan para resumir "
+  "las trece variables, y decidir cuántas conservar requiere criterios algo más formales (sección 3.5.3).")
+
 
 # 3.4.5 ---------------------------------------------------------------------------------------------------------
 H3("3.4.5 Variables independientes y dependientes")
@@ -848,7 +908,7 @@ P(f"Las cuatro variables que clasificamos como independientes tienen correlacion
 figura("fig_relaciones.png", ANCHO, "Tres relaciones entre variables dependientes, con su recta de ajuste y su coeficiente de "
                                     "correlación.", "relaciones")
 
-# 3.5 -------------------------------------------------------------------------------------------------------
+# 3.4 -------------------------------------------------------------------------------------------------------
 H2("3.5 Componentes principales (PCA)")
 H3("3.5.1 Qué ventaja ofrece el PCA")
 P(f"Con {p_} variables y una estructura de correlación como la de la sección 3.4, trabajar variable por variable es redundante. El "
@@ -858,50 +918,67 @@ P(f"Primero, la reducción: veremos que {k} componentes conservan alrededor de {
   f"{p_} variables. Segundo, la eliminación de redundancia: las componentes son ortogonales, y lo verificamos numéricamente, pues la "
   f"mayor covarianza entre dos componentes es {R['cov_entre_cp']:.1e}, es decir, cero salvo error de redondeo. Tercero, la "
   f"visualización: las dos primeras componentes ({100 * acum_z[1]:.1f} % de la varianza) permiten dibujar a los países en un plano. "
-  "Cuarto, en un modelo posterior las componentes evitan la multicolinealidad entre las variables originales. A cambio, perdemos "
-  "parte de la información (lo que queda fuera de las componentes elegidas) y las componentes son más difíciles de interpretar que "
+  "A cambio, perdemos parte de la información (lo que queda fuera de las componentes elegidas) y las componentes tienden a ser más difíciles de interpretar que "
   "las variables originales.")
 H3("3.5.2 Cómo se calculan")
 P("El procedimiento es el siguiente. Se centran los datos restando la media de cada variable; se calcula la matriz de covarianza; se "
   "obtienen sus valores propios λ y vectores propios; cada vector propio da los coeficientes de una componente y su valor propio es "
   "la varianza de esa componente. La proporción de varianza explicada por la componente <i>i</i> es λ<sub>i</sub> / Σλ, donde "
   "λ<sub>i</sub> es el valor propio de la componente <i>i</i> y Σλ es la suma de todos los valores propios (la varianza total). Las "
-  "puntuaciones (scores) de cada país se obtienen multiplicando los datos centrados por los vectores propios.")
+  "componentes principales se obtienen multiplicando los datos centrados por los vectores propios.")
+
 P("Calculamos el PCA de dos formas: con la matriz de covarianza de los datos sin estandarizar y con la de los datos estandarizados "
-  "(cada variable dividida entre su desviación estándar). Como se anota en el pizarrón, la matriz de covarianza de los datos "
-  "estandarizados es igual a la matriz de correlación; lo comprobamos en el programa. Programamos el cálculo con los valores propios "
-  "directamente y lo comparamos con la función <i>PCA</i> de scikit-learn, con coincidencia total en los valores propios "
-  f"({'verificado' if R['verificacion_sklearn'] else 'no verificado'}).")
+  "(cada variable dividida entre su desviación estándar). La matriz de covarianza de los datos estandarizados es igual a la "
+  "matriz de correlación de los datos originales. Lo demostramos desarrollando los dos procedimientos para un par cualquiera de "
+  "variables X<sub>j</sub> y X<sub>k</sub>, donde <i>x<sub>ij</sub></i> es el valor de la variable <i>j</i> en el país <i>i</i>, "
+  + mat(r"$\bar{x}_j$", "xbarj") + " su media, <i>s<sub>j</sub></i> su desviación estándar y <i>n</i> el número de países.")
+P("<b>Procedimiento 1: covarianza de los datos estandarizados.</b> Cada valor se estandariza como "
+  + mat(r"$z_{ij}=(x_{ij}-\bar{x}_j)\,/\,s_j$.", "zij") + " La media de una variable "
+  "estandarizada es cero, porque la suma de los valores es <i>n</i> veces su media:")
+formula("dem_media_z", r"$\bar{z}_j=\dfrac{1}{n}\sum_{i=1}^{n}\dfrac{x_{ij}-\bar{x}_j}{s_j}=\dfrac{1}{n\,s_j}"
+                       r"\left(\sum_{i=1}^{n}x_{ij}-n\,\bar{x}_j\right)=\dfrac{1}{n\,s_j}\left(n\,\bar{x}_j-n\,\bar{x}_j\right)=0$", 11.5)
+P("Por lo tanto, en la covarianza de Z<sub>j</sub> y Z<sub>k</sub> las medias valen cero y, al sustituir la definición de "
+  "<i>z</i>, se obtiene:")
+formula("dem_cov_z", r"$\mathrm{Cov}(Z_j,Z_k)=\dfrac{1}{n-1}\sum_{i=1}^{n}z_{ij}\,z_{ik}=\dfrac{1}{n-1}\sum_{i=1}^{n}"
+                     r"\dfrac{x_{ij}-\bar{x}_j}{s_j}\cdot\dfrac{x_{ik}-\bar{x}_k}{s_k}="
+                     r"\dfrac{\sum_{i=1}^{n}(x_{ij}-\bar{x}_j)(x_{ik}-\bar{x}_k)}{(n-1)\,s_j\,s_k}$", 11.5)
+P("<b>Procedimiento 2: correlación de Pearson de los datos originales.</b> Al sustituir la definición de covarianza "
+  "(sección 1.4.1) en la de correlación (sección 1.4.2):")
+formula("dem_pearson", r"$r(X_j,X_k)=\dfrac{\mathrm{Cov}(X_j,X_k)}{s_j\,s_k}="
+                       r"\dfrac{\dfrac{1}{n-1}\sum_{i=1}^{n}(x_{ij}-\bar{x}_j)(x_{ik}-\bar{x}_k)}{s_j\,s_k}="
+                       r"\dfrac{\sum_{i=1}^{n}(x_{ij}-\bar{x}_j)(x_{ik}-\bar{x}_k)}{(n-1)\,s_j\,s_k}$", 11.5)
+P("Las dos expresiones finales son idénticas, así que Cov(Z<sub>j</sub>, Z<sub>k</sub>) = r(X<sub>j</sub>, X<sub>k</sub>) para "
+  "todo par de variables. En la diagonal, Var(Z<sub>j</sub>) = Cov(Z<sub>j</sub>, Z<sub>j</sub>) = "
+  "<i>s<sub>j</sub></i><super>2</super> / <i>s<sub>j</sub></i><super>2</super> = 1, que coincide con r(X<sub>j</sub>, "
+  "X<sub>j</sub>) = 1. En forma matricial, si X<sub>c</sub> es la matriz de datos centrados, <i>S</i> su matriz de covarianza y "
+  "<i>D</i> = diag(<i>s</i><sub>1</sub>, …, <i>s<sub>p</sub></i>) la matriz diagonal de desviaciones estándar, entonces "
+  "<i>Z</i> = X<sub>c</sub><i>D</i><super>−1</super> y, como <i>D</i> es simétrica:")
+formula("dem_matricial", r"$S_Z=\dfrac{Z^{\top}Z}{n-1}=\dfrac{(X_cD^{-1})^{\top}(X_cD^{-1})}{n-1}="
+                         r"D^{-1}\,\dfrac{X_c^{\top}X_c}{n-1}\,D^{-1}=D^{-1}S\,D^{-1}=R$", 11.5)
+_ej = R["ejemplo_cov_r"]
+P(f"Por ejemplo, para natalidad y mortalidad infantil, Cov = {_ej['cov']:.2f}, <i>s</i> = {_ej['s_a']:.2f} y "
+  f"<i>s</i> = {_ej['s_b']:.2f}. Por el procedimiento 2, <i>r</i> = {_ej['cov']:.2f} / ({_ej['s_a']:.2f} × {_ej['s_b']:.2f}) = "
+  f"{_ej['cov'] / (_ej['s_a'] * _ej['s_b']):.3f}, y la covarianza de las dos variables ya estandarizadas (procedimiento 1) da el "
+  f"mismo valor, {_ej['cov_z']:.3f}.")
 bloque_codigo("pca")
 H3("3.5.3 Por qué elegimos cuatro componentes")
-P("El número de componentes no se puede escoger al azar, así que usamos los criterios de la sección 1.4.6 sobre el caso "
-  "estandarizado, que es el que tiene sentido interpretar (la sección 3.6 lo justifica):")
-P(f"El criterio de Kaiser conserva las componentes con valor propio mayor que 1, es decir, las que explican más varianza que una "
-  f"variable original estandarizada; da {R['k_kaiser']} componentes. La simulación de Horn compara cada valor propio con el que se "
-  f"obtendría por azar con datos sin estructura (percentil 95 de 500 simulaciones); da {R['k_horn']}. El criterio de la varianza "
-  f"acumulada pide llegar a una proporción alta, aquí 80 %; da {R['k_80']}. Además, la gráfica de sedimentación (scree plot) "
-  "muestra un codo después de la segunda componente.")
+P("Para elegir el número de componentes aplicamos el criterio de Kaiser descrito en la sección 1.4.6 al caso estandarizado, "
+  "que es el que tiene sentido interpretar (la sección 3.6 lo justifica): se conservan las componentes cuyo valor propio es "
+  f"mayor que 1. La Figura {F['scree']} muestra los valores propios junto a ese umbral y la Tabla {T['valores']} los seis "
+  "primeros con su porcentaje de varianza.")
 bloque_codigo("criterios")
-figura("fig_scree.png", ANCHO, "Izquierda: valores propios, umbral de Kaiser y valores esperados por azar. Derecha: varianza "
+figura("fig_scree.png", ANCHO, "Izquierda: valores propios y umbral del criterio de Kaiser (λ = 1). Derecha: varianza "
                                "explicada individual y acumulada.", "scree")
-hp, hm = R["horn"], R["horn_media"]
-filas = [["Componente", "Valor propio", "% de varianza", "% acumulado", "Umbral por azar (Horn, p. 95)", "Media por azar"]]
-filas += [[f"CP{i + 1}", f"{val_z[i]:.2f}", f"{100 * prop_z[i]:.1f}", f"{100 * acum_z[i]:.1f}", f"{hp[i]:.2f}", f"{hm[i]:.2f}"]
+filas = [["Componente", "Valor propio", "% de varianza", "% acumulado", "¿λ > 1?"]]
+filas += [[f"CP{i + 1}", f"{val_z[i]:.2f}", f"{100 * prop_z[i]:.1f}", f"{100 * acum_z[i]:.1f}", "Sí" if val_z[i] > 1 else "No"]
           for i in range(6)]
-tabla("valores", "Valores propios de la matriz de correlación (primeras seis componentes).", filas, [62, 62, 66, 66, 122, 82])
-P(f"Los criterios no coinciden. Kaiser pide {R['k_kaiser']}, la simulación de Horn solo {R['k_horn']} y la varianza acumulada "
-  f"{R['k_80']}. Elegimos {k} componentes por tres razones. La CP3 y la CP4 tienen valores propios de {val_z[2]:.2f} y "
-  f"{val_z[3]:.2f}, por encima de 1, y juntas aportan {100 * (prop_z[2] + prop_z[3]):.1f} % de la varianza. Con {k} componentes se "
-  f"explica {100 * acum_z[k - 1]:.1f} %, cercano al 80 % y mucho más que el {100 * acum_z[1]:.1f} % de dos componentes. Y, como se "
-  f"ve en la siguiente subsección, la CP3 y la CP4 tienen una interpretación geográfica clara. La CP5 ({val_z[4]:.2f}) queda por "
-  "debajo de 1 y no la incluimos aunque con ella se pasaría de 80 %.")
-P("La sección 1.4.6 explica que la referencia de Horn depende de qué tan exigente se quiera ser, y aquí eso importa. Con el "
-  f"percentil 95, la CP3 queda justo por debajo del umbral (λ<sub>3</sub> = {val_z[2]:.3f} frente a {hp[2]:.3f}; el "
-  f"{100 * R['horn_supera'][2]:.1f} % de las simulaciones dio un tercer valor propio igual o mayor). Con la media de las "
-  f"simulaciones, que es el criterio original de Horn, se conservan {R['k_horn_media']} componentes, porque la CP4 ({val_z[3]:.3f}) "
-  f"apenas supera la media de {hm[3]:.3f}. La CP1 y la CP2, en cambio, superan cualquier referencia con amplitud. Reconocemos, por "
-  "tanto, que la CP3 y la CP4 son marginales (sus valores propios están en la frontera de lo que puede producir el azar), así que la "
-  "parte sólida del resultado son las dos primeras componentes.")
+tabla("valores", "Valores propios de la matriz de correlación (primeras seis componentes).", filas, [80, 90, 90, 90, 90])
+P(f"Hay {R['k_kaiser']} valores propios mayores que 1, así que el criterio de Kaiser conserva {k} componentes. La CP1 "
+  f"({val_z[0]:.2f}) y la CP2 ({val_z[1]:.2f}) quedan muy por encima del umbral; la CP3 y la CP4 ({val_z[2]:.2f} y "
+  f"{val_z[3]:.2f}) lo superan con menor margen y juntas aportan {100 * (prop_z[2] + prop_z[3]):.1f} % de la varianza. Con {k} "
+  f"componentes se explica {100 * acum_z[k - 1]:.1f} % de la varianza, mucho más que el {100 * acum_z[1]:.1f} % de dos "
+  "componentes, y, como se ve en la siguiente subsección, la CP3 y la CP4 tienen una interpretación geográfica clara. La CP5 "
+  f"({val_z[4]:.2f}) queda por debajo de 1 y no se incluye.")
 H3("3.5.4 Interpretación de las componentes")
 P("Los coeficientes de cada componente se interpretan mejor como cargas, es decir, como la correlación entre cada variable original "
   "y la componente. Una carga grande en valor absoluto indica que esa variable pesa mucho en la componente.")
@@ -946,7 +1023,7 @@ _mej = lista([f"{N(v)} ({x:.2f})" for v, x in _o[:5]])
 _peo = lista([f"{N(v)} ({x:.2f})" for v, x in _o[-3:]])
 P(f"El error relativo baja de {_e[0]:.2f} con una componente a {_e[k - 1]:.2f} con {PALABRA[k]}. Su cuadrado es igual a 1 menos la varianza "
   f"acumulada (también lo comprobamos), de modo que con {PALABRA[k]} componentes se deja de recuperar {100 * (1 - acum_z[k - 1]):.1f} % de la "
-  "varianza, justo lo que predice la ecuación de la sección 1.4.7.")
+  "varianza, justo la que explicaban las componentes descartadas.")
 P(f"Variable por variable, con {PALABRA[k]} componentes se recuperan bien {_mej}. Se recuperan peor {_peo}: son variables con colas "
   "muy largas, en las que unos pocos territorios (Monaco, Macau, islas pequeñas) concentran la varianza, y el R² se mide en la escala "
   "original, donde esos casos pesan mucho. Con solo dos componentes, la tierra cultivable y la densidad casi no se recuperan, lo que "
@@ -1014,20 +1091,13 @@ P(f"<b>H1 (las variables miden desarrollo y se pueden resumir).</b> Se cumple en
   f"({100 * prop_z[0]:.1f} %) ordena a las regiones de África a Europa. La comparación de la sección 3.4.4 lo muestra de forma "
   f"directa: las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}) se condensan en la CP1, mientras que "
   f"{n_(bottom2[0])} y {n_(bottom2[1])}, las menos correlacionadas, solo aparecen en componentes posteriores. Sin embargo, la "
-  f"reducción es moderada: hacen falta cuatro componentes para llegar a {100 * acum_z[3]:.1f} %, y la simulación de Horn con el "
-  f"percentil 95 solo respalda {R['k_horn']} ({100 * acum_z[R['k_horn'] - 1]:.1f} %). Es decir, los {p_} indicadores no se reducen "
+  f"reducción es moderada: hacen falta cuatro componentes para llegar a {100 * acum_z[3]:.1f} %. Es decir, los {p_} indicadores no se reducen "
   "a una sola dimensión, porque las variables geográficas (tierra cultivable, cultivos permanentes, costa) aportan estructura propia.")
 P(f"<b>H2 (la estandarización es necesaria).</b> Se cumple de forma contundente: sin estandarizar, la CP1 explica "
   f"{100 * R['prop_s'][0]:.2f} % de la varianza y es prácticamente el PIB per cápita; estandarizando, explica "
   f"{100 * prop_z[0]:.1f} % y recibe peso de {R['n_cargas_05']} variables.")
-H2("4.2 Resultados inesperados y limitaciones")
-P(f"Los criterios para elegir componentes no coinciden (Kaiser {R['k_kaiser']}, Horn {R['k_horn']}, varianza acumulada {R['k_80']}). "
-  f"Una explicación es que Horn es el más exigente, pues descuenta lo que se obtendría por azar con {R['n_depurados']} países y {p_} "
-  f"variables, mientras que Kaiser es más permisivo; la CP3 y la CP4 tienen valores propios de {val_z[2]:.2f} y {val_z[3]:.2f}, "
-  "apenas por encima de 1, y quedan en la frontera del azar: con la media de las simulaciones Horn sí las respalda "
-  f"({R['k_horn_media']} componentes). Son interpretables pero marginales, por lo que las dos primeras componentes son el resultado "
-  "más firme.")
-P(f"Otras limitaciones: (1) en migración neta, {R['ceros_migracion']} países tienen exactamente cero, y es probable que algunos de "
+H2("4.2 Limitaciones")
+P(f"Las principales limitaciones del análisis son: (1) en migración neta, {R['ceros_migracion']} países tienen exactamente cero, y es probable que algunos de "
   "esos ceros sean datos no disponibles, lo que debilita su correlación con las demás variables; (2) la imputación con la mediana "
   f"regional reduce algo la varianza de las variables más afectadas ({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países "
   "imputados); (3) los datos son de mediados de la década de 2000, de modo que las conclusiones describen ese periodo; (4) la "
@@ -1055,9 +1125,7 @@ P("Las correlaciones muestran un bloque de variables que describe el nivel de de
   f"correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) aportan información propia. Por eso clasificamos las condiciones "
   "geográficas como independientes y el bloque como dependiente, aclarando que se trata de una hipótesis y no de una prueba de causalidad.")
 P(f"Con datos estandarizados, cuatro componentes explican {100 * acum_z[3]:.1f} % de la varianza. La primera (el "
-  f"{100 * prop_z[0]:.1f} %) es un eje de desarrollo que ordena a las regiones de forma coherente. La elección de cuatro componentes "
-  f"se apoya en Kaiser, en la varianza acumulada y en Horn con la media de las simulaciones, aunque Horn con el percentil 95 sugiere "
-  f"solo {PALABRA.get(R['k_horn'], R['k_horn'])}, de modo que las dos primeras son las más firmes.")
+  f"{100 * prop_z[0]:.1f} %) es un eje de desarrollo que ordena a las regiones de forma coherente.")
 P("Al regresar a la matriz original con cuatro componentes se recuperan razonablemente las variables de desarrollo (mortalidad infantil, natalidad, teléfonos, PIB per cápita), pero no las geográficas de colas largas (densidad de población y costa/área); la reconstrucción es una aproximación y puede dar valores imposibles en países extremos.")
 P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas y pierde su utilidad. Limitaciones: los datos son de "
   "mediados de los años 2000; imputamos con la mediana regional una parte pequeña de los valores; y el cero de migración neta puede "
@@ -1073,19 +1141,14 @@ for ref in [
     "[2] Jolliffe, I. T. (2002). <i>Principal Component Analysis</i> (2.ª ed.). Springer.",
     "[3] Kaiser, H. F. (1960). The application of electronic computers to factor analysis. <i>Educational and Psychological "
     "Measurement</i>, 20(1), 141–151.",
-    "[4] Horn, J. L. (1965). A rationale and test for the number of factors in factor analysis. <i>Psychometrika</i>, 30(2), 179–185.",
-    "[5] United Nations Development Programme (1990). <i>Human Development Report 1990</i>. Oxford University Press.",
-    "[6] McKinney, W. (2010). Data structures for statistical computing in Python. <i>Proceedings of the 9th Python in Science "
+    "[4] United Nations Development Programme (1990). <i>Human Development Report 1990</i>. Oxford University Press.",
+    "[5] McKinney, W. (2010). Data structures for statistical computing in Python. <i>Proceedings of the 9th Python in Science "
     "Conference</i>, 51–56.",
-    "[7] Harris, C. R. et al. (2020). Array programming with NumPy. <i>Nature</i>, 585, 357–362.",
-    "[8] Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <i>Computing in Science &amp; Engineering</i>, 9(3), 90–95.",
-    "[9] Waskom, M. L. (2021). seaborn: statistical data visualization. <i>Journal of Open Source Software</i>, 6(60), 3021.",
-    "[10] Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research</i>, 12, 2825–2830.",
-    "[11] Guttman, L. (1954). Some necessary conditions for common-factor analysis. <i>Psychometrika</i>, 19(2), 149–161.",
-    "[12] Glorfeld, L. W. (1995). An improvement on Horn's parallel analysis methodology for selecting the correct number of factors "
-    "to retain. <i>Educational and Psychological Measurement</i>, 55(3), 377–393.",
-    "[13] Zwick, W. R. y Velicer, W. F. (1986). Comparison of five rules for determining the number of components to retain. "
-    "<i>Psychological Bulletin</i>, 99(3), 432–442.",
+    "[6] Harris, C. R. et al. (2020). Array programming with NumPy. <i>Nature</i>, 585, 357–362.",
+    "[7] Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <i>Computing in Science &amp; Engineering</i>, 9(3), 90–95.",
+    "[8] Waskom, M. L. (2021). seaborn: statistical data visualization. <i>Journal of Open Source Software</i>, 6(60), 3021.",
+    "[9] Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research</i>, 12, 2825–2830.",
+    "[10] Guttman, L. (1954). Some necessary conditions for common-factor analysis. <i>Psychometrika</i>, 19(2), 149–161.",
 ]:
     P(ref, biblio)
 

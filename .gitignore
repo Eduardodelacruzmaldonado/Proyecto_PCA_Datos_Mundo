@@ -10,3 +10,6 @@ Thumbs.db
 # Entorno virtual de Python
 .venv/
 venv/
+
+# Respaldos locales del reporte (no se suben)
+respaldo_reporte_original/

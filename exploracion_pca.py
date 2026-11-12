@@ -209,13 +209,18 @@ fig.tight_layout(); guardar(fig, "fig_log.png")
 NUMERICAS = [c for c in raw.columns if c not in ("Region", "Climate")]
 
 
+def cifra(v):
+    """Cifra completa con separador de miles para valores grandes (población, superficie)."""
+    return f"{v:,.0f}" if abs(v) >= 1e4 else f"{v:.4g}"
+
+
 def hist_box(x, titulo, unidad, ruta):
     x = x.dropna()
     fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 1.9),
                                gridspec_kw={"width_ratios": [2.6, 1.6]})
     a.hist(x, bins=20, color=C1, edgecolor="white", linewidth=.4)
-    a.axvline(x.mean(), color=C2, ls="--", lw=1, label=f"media = {x.mean():.4g}")
-    a.axvline(x.median(), color="black", lw=1, label=f"mediana = {x.median():.4g}")
+    a.axvline(x.mean(), color=C2, ls="--", lw=1, label=f"media = {cifra(x.mean())}")
+    a.axvline(x.median(), color="black", lw=1, label=f"mediana = {cifra(x.median())}")
     a.set_xlabel(unidad); a.set_ylabel("países"); a.set_title(titulo, loc="left", fontsize=8.5)
     a.legend(frameon=False, fontsize=6.5)
     b.boxplot(x, vert=False, widths=.5, medianprops=dict(color="black"),
@@ -384,8 +389,7 @@ X = trans[VARS].to_numpy(float)
 Xc = X - X.mean(axis=0)                       # datos centrados
 S = np.cov(Xc, rowvar=False)                  # covarianza sin estandarizar
 Z = Xc / X.std(axis=0, ddof=1)                # datos estandarizados
-R = np.cov(Z, rowvar=False)                   # covarianza de los estandarizados
-print("cov(Z) coincide con la matriz de correlación:", np.allclose(R, np.corrcoef(X, rowvar=False)))
+R = np.cov(Z, rowvar=False)                   # covarianza de los estandarizados (= matriz de correlación)
 
 
 def pca_manual(M):
@@ -407,41 +411,33 @@ val_z, vec_z = pca_manual(R)                  # estandarizados
 skl = PCA().fit(Z)
 RESULTADOS["verificacion_sklearn"] = bool(np.allclose(skl.explained_variance_, val_z))
 RESULTADOS["cov_igual_corr"] = bool(np.allclose(R, np.corrcoef(X, rowvar=False)))
+# Ejemplo numérico de los dos procedimientos (sección 3.4.2) con natalidad y mortalidad infantil
+_a, _b = VARS.index("Birthrate"), VARS.index("Infant mortality (per 1000 births)")
+RESULTADOS["ejemplo_cov_r"] = {
+    "cov": float(S[_a, _b]), "s_a": float(X[:, _a].std(ddof=1)), "s_b": float(X[:, _b].std(ddof=1)),
+    "cov_z": float(R[_a, _b])}
 
 # >>> criterios
 p = len(VARS)
-prop_z = val_z / val_z.sum()
-acum_z = np.cumsum(prop_z)
-rng = np.random.default_rng(0)
-sim = np.array([np.sort(np.linalg.eigvalsh(np.corrcoef(rng.standard_normal((len(X), p)),
-                rowvar=False)))[::-1]
-                for _ in range(500)])
-horn = np.percentile(sim, 95, axis=0)         # simulación de Horn (valores propios esperados por azar)
-horn_media = sim.mean(axis=0)                 # variante: media de las 500 simulaciones
-k_kaiser = int((val_z > 1).sum())
-k_horn = int((val_z > horn).sum())
-k_horn_media = int((val_z > horn_media).sum())
-k_80 = int(np.argmax(acum_z >= .80) + 1)
-k = int(np.median([k_kaiser, k_horn, k_80]))
-print("Kaiser:", k_kaiser, "| Horn:", k_horn, "| 80 %:", k_80, "| elegido:", k)
+prop_z = val_z / val_z.sum()                  # proporción de varianza de cada componente
+acum_z = np.cumsum(prop_z)                    # proporción acumulada
+k_kaiser = int((val_z > 1).sum())             # criterio de Kaiser: valores propios mayores que 1
+k = k_kaiser
+print("Kaiser:", k_kaiser, "componentes")
 print(np.round(val_z, 2)); print(np.round(100 * acum_z, 1))
 # <<< criterios
 
 RESULTADOS.update({
     "val_z": val_z.tolist(), "prop_z": prop_z.tolist(), "acum_z": acum_z.tolist(),
-    "horn": horn.tolist(), "horn_media": horn_media.tolist(), "k_kaiser": k_kaiser,
-    "k_horn": k_horn, "k_horn_media": k_horn_media, "k_80": k_80, "k": k,
-    "horn_supera": [float((sim[:, j] >= val_z[j]).mean()) for j in range(p)],
-    "ruido_mayor_1": float((sim > 1).sum(axis=1).mean()),
+    "k_kaiser": k_kaiser, "k": k,
+    "k_80": int(np.argmax(acum_z >= .80) + 1),     # componentes para llegar a 80 % (comparación de la sección 3.6.2)
 })
-pd.DataFrame({"valor_propio": val_z, "proporcion": prop_z, "acumulada": acum_z,
-              "horn_p95": horn, "horn_media": horn_media},
+pd.DataFrame({"valor_propio": val_z, "proporcion": prop_z, "acumulada": acum_z},
              index=[f"CP{i}" for i in range(1, p + 1)]).to_csv(RES / "valores_propios.csv", encoding="utf-8")
 
 fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 2.45))
 comp = np.arange(1, p + 1)
 a.plot(comp, val_z, "o-", color=C1, ms=3.5, lw=1.4, label="valores propios")
-a.plot(comp, horn, "s--", color="gray", ms=3, lw=1, label="simulación de Horn (p. 95)")
 a.axhline(1, color=C2, ls=":", lw=1, label="criterio de Kaiser (λ = 1)")
 a.set_xlabel("componente"); a.set_ylabel("valor propio"); a.legend(frameon=False, fontsize=6.5)
 b.bar(comp, 100 * prop_z, color=C1, label="individual")
@@ -547,7 +543,7 @@ b.set_xlabel("R² en la escala original"); b.legend(frameon=False, fontsize=6.5)
 fig.tight_layout(); guardar(fig, "fig_recon.png")
 
 # ---------------------------------------------------------------------------------------------
-# Comparación gráfica de las variables más y menos correlacionadas (sección 3.4.4)
+# Comparación gráfica de las variables más correlacionadas (sección 3.3.3)
 # ---------------------------------------------------------------------------------------------
 cmap_r = plt.get_cmap("RdBu_r")
 # >>> figura_comparacion
@@ -571,74 +567,71 @@ fig.tight_layout(); fig.savefig(FIG / "fig_comparacion_correlaciones.png")
 # <<< figura_comparacion
 plt.close(fig)
 
-seis = top4 + bottom2
-idx6 = [VARS.index(v) for v in seis]
-largo = {v: float(np.hypot(cargas[VARS.index(v), 0], cargas[VARS.index(v), 1])) for v in seis}
-RESULTADOS["largo_circulo"] = largo
-fig, axes = plt.subplots(2, 2, figsize=(6.6, 6.2))
-# (a) submatriz de correlación
-ax = axes[0, 0]
-sns.heatmap(corr.loc[seis, seis], annot=True, fmt="+.2f", cmap="RdBu_r", vmin=-1, vmax=1, square=True,
-            linewidths=.3, annot_kws={"size": 6.5}, cbar=False, ax=ax,
-            xticklabels=[NOMBRES[v] for v in seis], yticklabels=[NOMBRES[v] for v in seis])
-ax.axhline(4, color="black", lw=1.2); ax.axvline(4, color="black", lw=1.2)
-ax.tick_params(labelsize=6.5)
-ax.set_title("(a) Submatriz de correlación", loc="left")
-# (b) círculo de correlaciones: coordenadas = cargas en CP1 y CP2
-ax = axes[0, 1]
-t_ = np.linspace(0, 2 * np.pi, 200)
-ax.plot(np.cos(t_), np.sin(t_), color="gray", lw=.6)
-ax.axhline(0, color="#cccccc", lw=.5); ax.axvline(0, color="#cccccc", lw=.5)
-pos_etq = {}
-for lado in (-1, 1):                         # separa verticalmente las etiquetas de cada lado
-    vs = sorted([v for v in seis if np.sign(cargas[VARS.index(v), 0] or 1) == lado],
-                key=lambda v: cargas[VARS.index(v), 1])
-    previa = -np.inf
-    for v in vs:
-        y_etq = max(cargas[VARS.index(v), 1], previa + 0.36)
-        pos_etq[v] = y_etq
-        previa = y_etq
-for v in seis:
-    x0, y0 = cargas[VARS.index(v), 0], cargas[VARS.index(v), 1]
-    ax.annotate("", xy=(x0, y0), xytext=(0, 0),
-                arrowprops=dict(arrowstyle="-|>", color=color_bloque(v), lw=1.3))
-    x_etq = x0 + (0.06 if x0 >= 0 else -0.06)
-    ax.text(x_etq, pos_etq[v], f"{NOMBRES[v]}\n({largo[v]:.2f})", fontsize=5.8, linespacing=.95,
-            ha="left" if x0 >= 0 else "right", va="center")
-ax.set_xlim(-2.3, 1.9); ax.set_ylim(-1.15, 1.15); ax.set_aspect("equal")
-ax.set_xticks([-1, 0, 1]); ax.set_yticks([-1, 0, 1])
-ax.set_xlabel("carga en CP1"); ax.set_ylabel("carga en CP2")
-ax.set_title("(b) Círculo de correlaciones (CP1-CP2)", loc="left")
-# (c) intensidad media de asociación de las 13 variables
-ax = axes[1, 0]
-col_c = [color_bloque(v) if v in seis else "#d9dde1" for v in intensidad.index]
-ax.barh([NOMBRES[v] for v in intensidad.index], intensidad.values, color=col_c)
-for y, x0 in enumerate(intensidad.values):
-    ax.text(x0 + .005, y, f"{x0:.2f}", va="center", fontsize=6)
-ax.set_xlabel("|r| promedio con las otras 12 variables"); ax.tick_params(axis="y", labelsize=6.5)
-ax.set_title("(c) Intensidad media de asociación", loc="left")
-# (d) par más correlacionado frente al par de las 2 menos correlacionadas, en valores z
-ax = axes[1, 1]
+# ---------------------------------------------------------------------------------------------
+# Valores y vectores propios de las variables más y menos correlacionadas (sección 3.3.3)
+# ---------------------------------------------------------------------------------------------
+from matplotlib.patches import Ellipse
 zt = (trans[VARS] - trans[VARS].mean()) / trans[VARS].std()
-par = max(((a_, b_) for a_, b_ in combinations(top4, 2)), key=lambda ab: abs(corr.loc[ab[0], ab[1]]))
-r_f, r_d = corr.loc[par[0], par[1]], corr.loc[bottom2[0], bottom2[1]]
-ax.scatter(zt[par[1]], zt[par[0]], s=5, alpha=.6, linewidths=0, color=C2 if r_f > 0 else C1,
-           label=f"{NOMBRES[par[1]]} vs. {NOMBRES[par[0]]} (r = {r_f:+.2f})")
-ax.scatter(zt[bottom2[0]], zt[bottom2[1]], s=6, alpha=.6, linewidths=0, color="gray", marker="D",
-           label=f"{NOMBRES[bottom2[0]]} vs. {NOMBRES[bottom2[1]]} (r = {r_d:+.2f})")
-lim = (-4.6, 4.9)
-xs = np.linspace(*lim, 20)
-ax.plot(xs, r_f * xs, color=C2 if r_f > 0 else C1, lw=1); ax.plot(xs, r_d * xs, color="black", lw=1, ls="--")
-ax.set_xlim(*lim); ax.set_ylim(*lim); ax.set_aspect("equal")
-ax.set_xlabel("variable X (z)"); ax.set_ylabel("variable Y (z)")
-ax.legend(frameon=False, fontsize=5.8, loc="upper center", bbox_to_anchor=(.5, -.2))
-ax.set_title("(d) Par más y menos correlacionado (rectas y = r x)", loc="left")
-fig.tight_layout(); guardar(fig, "fig_contraste_correlaciones.png")
-RESULTADOS["par_fuerte"] = [par[0], par[1], float(r_f)]
-RESULTADOS["r_bottom2"] = float(r_d)
-RESULTADOS["r_bottom2_con_top4"] = float(corr.loc[bottom2, top4].abs().to_numpy().max())
-RESULTADOS["fuera_z"] = int(((zt[bottom2] < lim[0]) | (zt[bottom2] > lim[1])).any(axis=1).sum()
-                            + ((zt[list(par)] < lim[0]) | (zt[list(par)] > lim[1])).any(axis=1).sum())
+
+# >>> vectores_propios
+def eigen(vs):
+    """Valores y vectores propios de la matriz de correlación de las variables vs, de mayor a menor."""
+    vals, vecs = np.linalg.eigh(corr.loc[vs, vs].to_numpy())
+    orden = np.argsort(vals)[::-1]
+    vals, vecs = vals[orden], vecs[:, orden]
+    return vals, vecs * np.where(vecs[0] < 0, -1, 1)          # signo: primera coordenada positiva
+
+# Pares: R = [[1, r], [r, 1]] tiene valores propios 1 + |r| y 1 - |r| y vectores (1, 1)/√2 y (1, -1)/√2
+eig_pares = []
+for a_, b_ in list(combinations(top4, 2)) + [tuple(bottom2)]:
+    vals, vecs = eigen([a_, b_])
+    r_ = corr.loc[a_, b_]
+    assert np.allclose(vals, [1 + abs(r_), 1 - abs(r_)])
+    eig_pares.append((a_, b_, r_, vals, vecs[:, 0]))
+
+# Grupos: las 4 variables más correlacionadas (matriz de 4 x 4) y las 2 menos correlacionadas (2 x 2)
+val4, vec4 = eigen(top4)
+val2, vec2 = eigen(bottom2)
+print("4 más correlacionadas, valores propios:", val4.round(3), "| CP1: %.1f %%" % (100 * val4[0] / 4))
+print("2 menos correlacionadas, valores propios:", val2.round(3), "| CP1: %.1f %%" % (100 * val2[0] / 2))
+# <<< vectores_propios
+
+# Figura: vectores propios de tres pares (el más correlacionado positivo y negativo del bloque y el de
+# las dos menos correlacionadas). Flechas de longitud 2√λ y elipse de dos desviaciones estándar.
+par_pos = max(combinations(top4, 2), key=lambda ab: corr.loc[ab[0], ab[1]])
+par_neg = min(combinations(top4, 2), key=lambda ab: corr.loc[ab[0], ab[1]])
+pares_fig = [par_pos, par_neg, tuple(bottom2)]
+fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.75))
+lim = 4.8
+for ax, (a_, b_), letra in zip(axes, pares_fig, "abc"):
+    vals, vecs = eigen([a_, b_])
+    r_ = corr.loc[a_, b_]
+    ax.scatter(zt[a_], zt[b_], s=3, alpha=.55, linewidths=0, color="#a9a9a9")
+    ang = np.degrees(np.arctan2(vecs[1, 0], vecs[0, 0]))
+    ax.add_patch(Ellipse((0, 0), 4 * np.sqrt(vals[0]), 4 * np.sqrt(vals[1]), angle=ang,
+                         fill=False, ls="--", lw=.7, ec="#333333"))
+    for j, col in enumerate((C2, C1)):
+        punta = vecs[:, j] * 2 * np.sqrt(vals[j])
+        ax.annotate("", xy=punta, xytext=(0, 0),
+                    arrowprops=dict(arrowstyle="-|>", color=col, lw=1.6, mutation_scale=9))
+        ax.text(*(punta * 1.18 + (np.array([.45, .25]) if j == 1 else 0)), f"$v_{j + 1}$", color=col, fontsize=8,
+                fontweight="bold", ha="center", va="center")
+    esquina = (.03, .97, "top") if r_ > 0 else (.03, .03, "bottom")
+    ax.text(esquina[0], esquina[1],
+            f"$\\lambda_1$ = {vals[0]:.2f} ({50 * vals[0]:.0f} %)\n$\\lambda_2$ = {vals[1]:.2f} ({50 * vals[1]:.0f} %)",
+            transform=ax.transAxes, fontsize=6, va=esquina[2], ha="left",
+            bbox=dict(boxstyle="round,pad=.3", fc="white", ec="#999999", lw=.5, alpha=.9))
+    ax.axhline(0, color="#dddddd", lw=.5, zorder=0); ax.axvline(0, color="#dddddd", lw=.5, zorder=0)
+    ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim); ax.set_aspect("equal")
+    ax.set_xticks([-4, -2, 0, 2, 4]); ax.set_yticks([-4, -2, 0, 2, 4])
+    ax.set_xlabel(f"{NOMBRES[a_]} (z)"); ax.set_ylabel(f"{NOMBRES[b_]} (z)")
+    ax.set_title(f"({letra}) r = {r_:+.2f}".replace("-", "−"), loc="left")
+fig.tight_layout(); guardar(fig, "fig_vectores_pares.png")
+
+RESULTADOS["eig_pares"] = [[a_, b_, float(r_), vals.tolist(), v1.tolist()] for a_, b_, r_, vals, v1 in eig_pares]
+RESULTADOS["eig_top4"] = {"vals": val4.tolist(), "vecs": vec4.tolist()}
+RESULTADOS["eig_bottom2"] = {"vals": val2.tolist(), "vecs": vec2.tolist()}
+RESULTADOS["pares_fig_eig"] = [list(pr) for pr in pares_fig]
 
 # ---------------------------------------------------------------------------------------------
 # 3.6 Estandarización: con y sin
