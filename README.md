@@ -16,25 +16,31 @@ Análisis exploratorio del conjunto de datos *Countries of the World* (Kaggle, f
 
 El flujo de trabajo es el planteado en clase:
 
-1. **Depuración.** Se descartan las variables categóricas y redundantes (clima, otros usos del suelo, industria, población y superficie), se eliminan 3 territorios con 4 o más datos faltantes (quedan 224 países) y se imputan los vacíos restantes con la mediana de la región.
+1. **Depuración.** Se descartan las variables categóricas y redundantes (clima, otros usos del suelo, industria, población y superficie) y se eliminan 3 territorios con 4 o más datos faltantes (quedan 224 países). Los vacíos restantes no se rellenan con la mediana: se estiman por **interpolación** (lineal o con spline cúbico natural) a partir de la variable más relacionada, y el método se elige por validación cruzada.
 2. **Exploración.** Histograma y diagrama de caja de cada variable, medidas descriptivas, matriz de covarianza, valores atípicos (criterio del rango intercuartílico) y transformación logarítmica de las variables con asimetría extrema.
-3. **Correlaciones.** Matriz de correlación de Pearson de las 13 variables, pares más y menos relacionados, comparación gráfica de las 4 variables más correlacionadas (natalidad, mortalidad infantil, agricultura y alfabetización) y contraste con las 2 menos correlacionadas (tierra cultivable y migración neta).
-4. **PCA.** Valores y vectores propios calculados con `numpy.linalg.eigh` (verificados con scikit-learn). El número de componentes se elige con el criterio de Kaiser (valores propios mayores que 1); con 4 componentes se explica 76.7 % de la varianza.
+3. **Correlaciones.** Matriz de correlación de Pearson de las 13 variables, pares más y menos relacionados y comparación de los valores y vectores propios de las variables más y menos correlacionadas.
+4. **PCA.** Valores y vectores propios calculados con `numpy.linalg.eigh` (verificados con scikit-learn). El número de componentes se elige con el criterio de Kaiser (valores propios mayores que 1); con 4 componentes se explica 76.9 % de la varianza.
 5. **Estandarización.** Comparación del PCA con y sin estandarizar: sin estandarizar, la primera componente explica 99.98 % de la varianza porque solo refleja el PIB per cápita.
-6. **Reconstrucción.** Se regresa de las componentes a la matriz original con *k* componentes, se deshacen la estandarización y el logaritmo y se mide el error; con 4 componentes se deja de recuperar 23.3 % de la varianza y en países extremos aparecen valores imposibles (por ejemplo, PIB negativo en Níger).
+6. **Reconstrucción.** Se regresa de las componentes a la matriz original con *k* componentes, se deshacen la estandarización y el logaritmo y se mide el error.
+7. **Predicción con splines cúbicos.** Con la serie anual de la mortalidad infantil de México (Banco Mundial) se construye un spline cúbico natural con nodos cada cinco años y se predicen los años intermedios (error de 0.05 muertes por cada 1000 nacimientos).
+
+El reporte no incluye código: todo el código, con su explicación, sus tablas y sus gráficas, está en el notebook `analisis_pca.ipynb`.
 
 ---
 
 ## Estructura del repositorio
 
 ```text
-├── exploracion_pca.py        # Todo el análisis: depuración, gráficas, correlaciones y PCA
+├── analisis_pca.ipynb        # Notebook con todo el código explicado, las tablas y las gráficas
+├── exploracion_pca.py        # El mismo análisis como programa (escrito por celdas)
+├── crear_notebook.py         # Convierte exploracion_pca.py en el notebook y lo ejecuta
 ├── generar_pdf_reporte.py    # Arma el reporte PDF con los resultados del análisis
 ├── datos/
-│   └── countries_of_the_world.csv
+│   ├── countries_of_the_world.csv
+│   └── mortalidad_infantil_mexico.csv   # Serie 1990-2023 del Banco Mundial (SP.DYN.IMRT.IN)
 ├── contexto/                 # Fotos del pizarrón, rúbrica del proyecto y contexto adicional
 ├── fuentes/                  # Tipografías Liberation Serif y DejaVu Sans Mono (licencias libres)
-├── graficas/                 # Gráficas generadas por exploracion_pca.py (y fórmulas del reporte)
+├── graficas/                 # Gráficas generadas por el análisis (y fórmulas del reporte)
 ├── resultados/               # Tablas y resultados numéricos (CSV y JSON)
 ├── reporte/
 │   └── Proyecto_PCA_Paises.pdf
@@ -43,7 +49,7 @@ El flujo de trabajo es el planteado en clase:
 └── README.md
 ```
 
-Los fragmentos de código que aparecen en el reporte se copian directamente de `exploracion_pca.py` (bloques marcados con `# >>> nombre` y `# <<< nombre`), y todos los números del texto se leen de la carpeta `resultados`, de modo que el PDF siempre corresponde al análisis ejecutado.
+`exploracion_pca.py` está escrito por celdas (`# %%` para código y `# %% [markdown]` para texto) y `crear_notebook.py` lo convierte tal cual en `analisis_pca.ipynb`, así que el programa y el notebook siempre tienen el mismo código. Todos los números del reporte se leen de la carpeta `resultados`, de modo que el PDF siempre corresponde al análisis ejecutado.
 
 ---
 
@@ -57,7 +63,7 @@ cd Proyecto_PCA_Datos_Mundo
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python3 exploracion_pca.py
+python3 crear_notebook.py
 python3 generar_pdf_reporte.py
 ```
 
@@ -67,14 +73,16 @@ cd Proyecto_PCA_Datos_Mundo
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python exploracion_pca.py
+python crear_notebook.py
 python generar_pdf_reporte.py
 ```
 
-`exploracion_pca.py` crea las carpetas `graficas` y `resultados`; `generar_pdf_reporte.py` escribe `reporte/Proyecto_PCA_Paises.pdf`. El análisis completo tarda unos segundos.
+`crear_notebook.py` ejecuta todo el análisis dentro del notebook `analisis_pca.ipynb` y crea las carpetas `graficas` y `resultados`; `generar_pdf_reporte.py` escribe `reporte/Proyecto_PCA_Paises.pdf`. También se puede abrir el notebook y ejecutarlo celda por celda, o correr solo el análisis con `python exploracion_pca.py`. Todo tarda menos de un minuto.
 
 ---
 
 ## Nota sobre los datos
 
 En el archivo original de Kaggle, la fracción del PIB de la industria de Países Bajos (Netherlands) aparece como `04,244`, lo que se lee como 4.244 y es imposible para una fracción (los tres sectores sumarían 5.0). En `datos/countries_of_the_world.csv` ese valor está corregido a `0,244`, con lo que agricultura + industria + servicios suman 1.001, como en el resto de los países.
+
+La serie de mortalidad infantil de México (`datos/mortalidad_infantil_mexico.csv`) se tomó de los Indicadores del Desarrollo Mundial del Banco Mundial, indicador `SP.DYN.IMRT.IN` (https://data.worldbank.org/indicator/SP.DYN.IMRT.IN?locations=MX), consultado en noviembre de 2026.
