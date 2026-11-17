@@ -219,47 +219,16 @@ RESULTADOS["faltan_eliminados"] = {pais: int(faltan[pais]) for pais in eliminado
 # ### Interpolación en lugar de la mediana
 # Cada vacío se estima con el valor que el propio país tiene en otra variable (la *predictora*):
 #
-# 1. **Nodos.** Los países con dato en ambas variables se ordenan por la predictora y se dividen en 8
+# 1. **Predictora.** Es la variable con mayor correlación de Pearson (en valor absoluto) con la variable
+#    que tiene el vacío, calculada con los países que tienen ambos datos. Si al país también le falta
+#    esa variable, se usa la siguiente más correlacionada.
+# 2. **Nodos.** Los países con dato en ambas variables se ordenan por la predictora y se dividen en 8
 #    grupos del mismo tamaño; cada grupo aporta un nodo (mediana de la predictora, mediana de la variable).
-# 2. **Curva.** Por los 8 nodos se hace pasar una interpolación lineal por tramos o un spline cúbico
-#    natural. El spline se obtiene resolviendo el sistema tridiagonal de sus coeficientes
-#    (`spline_natural`) y se comprueba contra `scipy.interpolate.CubicSpline`.
-# 3. **Elección.** Para cada variable se prueban las otras 12 como predictoras y los dos métodos con
-#    validación cruzada (se ocultan valores conocidos y se mide el error, RMSE); se usa la combinación
-#    de menor error. La mediana regional se calcula solo como referencia.
+# 3. **Interpolación lineal.** El vacío se estima con la recta que une los dos nodos entre los que cae
+#    el valor de la predictora del país.
 
 # %%
 N_NODOS = 8
-
-
-def spline_natural(xn, yn):
-    """Coeficientes a, b, c, d de S_j(x) = a_j + b_j (x - x_j) + c_j (x - x_j)^2 + d_j (x - x_j)^3."""
-    xn, yn = np.asarray(xn, float), np.asarray(yn, float)
-    n = len(xn) - 1
-    h = np.diff(xn)
-    A, lado = np.zeros((n + 1, n + 1)), np.zeros(n + 1)
-    A[0, 0] = A[n, n] = 1.0                                     # spline natural: S''(x_0) = S''(x_n) = 0
-    for j in range(1, n):                                       # continuidad de S' y S'' en los nodos interiores
-        A[j, j - 1], A[j, j], A[j, j + 1] = h[j - 1], 2 * (h[j - 1] + h[j]), h[j]
-        lado[j] = 3 * ((yn[j + 1] - yn[j]) / h[j] - (yn[j] - yn[j - 1]) / h[j - 1])
-    c = np.linalg.solve(A, lado)
-    b = np.diff(yn) / h - h * (2 * c[:-1] + c[1:]) / 3
-    d = np.diff(c) / (3 * h)
-    return yn[:-1], b, c[:-1], d
-
-
-def evaluar(xn, yn, x, metodo, extrapolar=False):
-    """Valor de la interpolación (lineal o spline cúbico) en x. Fuera de los nodos se usa el nodo extremo."""
-    xn, yn = np.asarray(xn, float), np.asarray(yn, float)
-    x = np.atleast_1d(np.asarray(x, float))
-    if not extrapolar:
-        x = np.clip(x, xn[0], xn[-1])
-    if metodo == "lineal":
-        return np.interp(x, xn, yn)
-    a, b, c, d = spline_natural(xn, yn)
-    j = np.clip(np.searchsorted(xn, x, side="right") - 1, 0, len(xn) - 2)
-    t = x - xn[j]
-    return a[j] + b[j] * t + c[j] * t ** 2 + d[j] * t ** 3
 
 
 def nodos(x, y, m=N_NODOS):
@@ -270,86 +239,55 @@ def nodos(x, y, m=N_NODOS):
     return g["x"].to_numpy(float), g["y"].to_numpy(float)
 
 
-# El spline propio coincide con el de SciPy
-from scipy.interpolate import CubicSpline
-_xn, _yn = nodos(observados["Phones (per 1000)"].dropna(), observados["Literacy (%)"])
-_xs = np.linspace(_xn[0], _xn[-1], 200)
-spline_ok = bool(np.allclose(evaluar(_xn, _yn, _xs, "cubico"), CubicSpline(_xn, _yn, bc_type="natural")(_xs)))
-print("spline_natural coincide con scipy.interpolate.CubicSpline:", spline_ok)
-RESULTADOS["spline_ok"] = spline_ok
+def interpolar(xn, yn, x):
+    """Interpolación lineal entre nodos. Fuera de los nodos no se extrapola: se usa el nodo del extremo."""
+    return np.interp(np.clip(np.atleast_1d(np.asarray(x, float)), xn[0], xn[-1]), xn, yn)
 
 
-def rmse_cv(v, x=None, metodo=None, pliegues=10):
-    """Error de validación cruzada al estimar v: se ocultan valores conocidos y se comparan con la estimación."""
-    cols = [v] + ([x] if x else [])
-    base = pd.concat([observados[cols], datos["Region"]], axis=1).dropna()
-    pliegue = np.random.default_rng(0).permutation(len(base)) % pliegues
-    errores = []
-    for f in range(pliegues):
-        ent, pru = base[pliegue != f], base[pliegue == f]
-        if x is None:                                           # referencia: mediana de la región
-            est = pru["Region"].map(ent.groupby("Region")[v].median()).fillna(ent[v].median()).to_numpy()
-        else:
-            xn, yn = nodos(ent[x], ent[v])
-            est = np.clip(evaluar(xn, yn, pru[x], metodo), ent[v].min(), ent[v].max())
-        errores.extend(est - pru[v].to_numpy())
-    return float(np.sqrt(np.mean(np.square(errores))))
+corr_obs = observados.corr(method="pearson")                    # con los países que tienen ambos datos
+con_vacios = observados.isna().sum()
+con_vacios = con_vacios[con_vacios > 0].sort_values(ascending=False)
+orden_pred = {v: corr_obs[v].drop(v).abs().sort_values(ascending=False) for v in con_vacios.index}
+mostrar(pd.DataFrame({"vacíos": con_vacios, "predictora": [orden_pred[v].index[0] for v in con_vacios.index],
+                      "|r|": [orden_pred[v].iloc[0] for v in con_vacios.index]}).round(3),
+        "Variable predictora de cada variable con vacíos")
 
-
-validacion, elegido = [], {}
-for v in [c for c in VARS if observados[c].isna().any()]:
-    pruebas = sorted((rmse_cv(v, x, m), x, m) for x in VARS if x != v for m in ("lineal", "cubico"))
-    elegido[v] = pruebas                                        # combinaciones ordenadas de menor a mayor error
-    _, x, m = pruebas[0]
-    validacion.append({"variable": v, "faltantes": int(observados[v].isna().sum()), "predictora": x,
-                       "metodo": m, "rmse_lineal": rmse_cv(v, x, "lineal"), "rmse_cubico": rmse_cv(v, x, "cubico"),
-                       "rmse_mediana_regional": rmse_cv(v)})
-validacion = pd.DataFrame(validacion).set_index("variable").sort_values("faltantes", ascending=False)
-validacion["mejora_%"] = 100 * (1 - validacion[["rmse_lineal", "rmse_cubico"]].min(axis=1)
-                               / validacion["rmse_mediana_regional"])
-mostrar(validacion.round(3), "Validación cruzada de la imputación (RMSE)")
-validacion.to_csv(RES / "validacion_imputacion.csv", encoding="utf-8")
-
-# Se rellena cada vacío con la mejor combinación cuya predictora sí está observada en ese país
 imputaciones = []
-for v, pruebas in elegido.items():
+for v in con_vacios.index:
     for pais in observados.index[observados[v].isna()]:
-        _, x, m = next(t for t in pruebas if pd.notna(observados.loc[pais, t[1]]))
+        x = next(c for c in orden_pred[v].index if pd.notna(observados.loc[pais, c]))
         ambos = observados[[x, v]].dropna()
         xn, yn = nodos(ambos[x], ambos[v])
-        valor = float(np.clip(evaluar(xn, yn, observados.loc[pais, x], m)[0], ambos[v].min(), ambos[v].max()))
+        valor = float(np.clip(interpolar(xn, yn, observados.loc[pais, x])[0], ambos[v].min(), ambos[v].max()))
         datos.loc[pais, v] = valor
-        imputaciones.append({"pais": pais, "variable": v, "predictora": x, "metodo": m,
+        imputaciones.append({"pais": pais, "variable": v, "predictora": x,
                              "valor_predictora": observados.loc[pais, x], "valor_imputado": valor})
 imputaciones = pd.DataFrame(imputaciones)
 imputaciones.to_csv(RES / "valores_imputados.csv", index=False, encoding="utf-8")
 mostrar(imputaciones.round(3), "Valores imputados")
 print("vacíos restantes:", int(datos[VARS].isna().sum().sum()))
 
-# Figura: nodos, interpolación lineal y spline cúbico de las tres variables con más vacíos
+# Figura: nodos e interpolación lineal de las tres variables con más vacíos
 fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.5))
-for ax, v in zip(axes, validacion.index[:3]):
-    x, m = validacion.loc[v, "predictora"], validacion.loc[v, "metodo"]
+for ax, v in zip(axes, con_vacios.index[:3]):
+    x = orden_pred[v].index[0]
     ambos = observados[[x, v]].dropna()
     xn, yn = nodos(ambos[x], ambos[v])
     xs = np.linspace(xn[0], xn[-1], 300)
     ax.scatter(ambos[x], ambos[v], s=4, color="#b5b5b5", linewidths=0, label="países con dato")
-    ax.plot(xs, evaluar(xn, yn, xs, "lineal"), color=C1, lw=1, ls="--", label="interpolación lineal")
-    ax.plot(xs, evaluar(xn, yn, xs, "cubico"), color=C2, lw=1.2, label="spline cúbico")
+    ax.plot(xs, interpolar(xn, yn, xs), color=C1, lw=1.2, label="interpolación lineal")
     ax.plot(xn, yn, "o", color="black", ms=3, label="nodos")
     imp_v = imputaciones[(imputaciones["variable"] == v) & (imputaciones["predictora"] == x)]
     ax.plot(imp_v["valor_predictora"], imp_v["valor_imputado"], "D", color="#c0392b", ms=3.2, mec="white",
             mew=.4, label="valores imputados")
     ax.set_xlabel(NOMBRES[x]); ax.set_ylabel(NOMBRES[v])
-    ax.set_title(f"método elegido: {'spline cúbico' if m == 'cubico' else 'lineal'}", loc="left", fontsize=7)
-axes[0].legend(frameon=False, fontsize=5.3, loc="lower right")
+    ax.set_title(f"r = {corr_obs.loc[x, v]:+.2f}".replace("-", "−"), loc="left", fontsize=7)
+axes[0].legend(frameon=False, fontsize=5.3)
 fig.tight_layout(); guardar(fig, "fig_imputacion.png")
-RESULTADOS["imputacion"] = {v: {"n": int(f["faltantes"]), "predictora": f["predictora"], "metodo": f["metodo"],
-                                "rmse_lineal": float(f["rmse_lineal"]), "rmse_cubico": float(f["rmse_cubico"]),
-                                "rmse_mediana": float(f["rmse_mediana_regional"]), "mejora": float(f["mejora_%"])}
-                            for v, f in validacion.iterrows()}
-RESULTADOS["imputacion_otras"] = int((imputaciones["predictora"].to_numpy()
-                                      != validacion.loc[imputaciones["variable"], "predictora"].to_numpy()).sum())
+RESULTADOS["imputacion"] = {v: {"n": int(con_vacios[v]), "predictora": orden_pred[v].index[0],
+                                "r": float(corr_obs.loc[orden_pred[v].index[0], v])} for v in con_vacios.index}
+RESULTADOS["imputacion_otras"] = int(sum(f["predictora"] != orden_pred[f["variable"]].index[0]
+                                         for _, f in imputaciones.iterrows()))
 RESULTADOS["n_nodos"] = N_NODOS
 
 imputados = raw.loc[datos.index, VARS].isna().sum()
@@ -527,7 +465,7 @@ mostrar(pd.DataFrame(mayor, index=["mayor |r|", "con"]).T, "Mayor correlación d
 # %% [markdown]
 # ### 3.4.3 Variables más y menos relacionadas
 # Correlación mínima significativa (prueba *t*), grupo de cuatro variables con mayor |r| promedio y las dos
-# variables con menor |r| promedio frente a las demás. Después, la figura de tres relaciones (3.4.5).
+# variables con menor |r| promedio frente a las demás.
 
 # %%
 abs_corr = corr.abs().to_numpy().copy()
@@ -571,19 +509,6 @@ RESULTADOS.update({
     "top4_puntaje": float(mejor), "grupos_4": grupos_4[:4], "bottom2": bottom2,
     "intensidad": {v: float(x) for v, x in intensidad.items()},
 })
-
-# Figura 24: tres relaciones entre variables dependientes
-rel = [("Phones (per 1000)", "GDP ($ per capita)"), ("Birthrate", "Infant mortality (per 1000 births)"),
-       ("Literacy (%)", "Infant mortality (per 1000 births)")]
-fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.15))
-for ax, (vx, vy) in zip(axes, rel):
-    ax.scatter(trans[vx], trans[vy], s=4, color=C1, alpha=.6, linewidths=0)
-    m, c0 = np.polyfit(trans[vx], trans[vy], 1)
-    xs = np.linspace(trans[vx].min(), trans[vx].max(), 50)
-    ax.plot(xs, m * xs + c0, color=C2, lw=1)
-    ax.set_xlabel(NOMBRES[vx]); ax.set_ylabel(NOMBRES[vy])
-    ax.set_title(f"r = {corr.loc[vx, vy]:.2f}", loc="left")
-fig.tight_layout(); guardar(fig, "fig_relaciones.png")
 
 # %% [markdown]
 # ### 3.4.4 Comparación gráfica de las variables más y menos correlacionadas
@@ -917,73 +842,157 @@ axes[1].legend(frameon=False, fontsize=5.5, loc="upper left")
 fig.tight_layout(); guardar(fig, "fig_planos.png")
 
 # %% [markdown]
-# ## 3.7 Predicción en el tiempo con splines cúbicos
-# La base de países es de un solo momento (mediados de la década de 2000), así que para predecir una
-# variable en el tiempo se usa la serie anual de la **mortalidad infantil de México** del Banco Mundial
-# (indicador `SP.DYN.IMRT.IN`), que es la variable con más peso en la primera componente.
+# ## 3.7 Predicción con splines cúbicos
+# La base es de un solo momento, así que la predicción se hace **a través de los países**: un spline cúbico
+# natural aprende cómo cambia la **mortalidad infantil** a lo largo del **PIB per cápita** y con esa curva se
+# predice la mortalidad infantil de países que no se usaron para construirla.
 #
-# Se toman como nodos solo los años múltiplos de 5 (1990, 1995, …, 2020) y con el spline cúbico natural
-# se predicen los años intermedios; después se compara con el dato real y con la interpolación lineal.
-# También se prueba la extrapolación a 2023, que queda fuera de los nodos.
+# 1. Se separan al azar (semilla fija) el 20 % de los países con ambos datos observados: son los países de
+#    prueba. Con el 80 % restante se construye la curva.
+# 2. Los países de entrenamiento se ordenan por PIB y se dividen en 8 grupos; cada grupo aporta un nodo
+#    (mediana del PIB, mediana de la mortalidad infantil), como en la sección 2.3.
+# 3. Por los nodos pasa un spline cúbico natural, que se obtiene resolviendo el sistema tridiagonal de sus
+#    coeficientes (`spline_natural`) y se comprueba contra `scipy.interpolate.CubicSpline`.
+# 4. Se predice la mortalidad infantil de los países de prueba y se compara con su valor real, con el spline
+#    y con la interpolación lineal entre los mismos nodos.
+# 5. La derivada del spline indica cuánto cambia la mortalidad infantil por cada 1,000 dólares de PIB en
+#    cada punto de la curva.
 
 # %%
-serie = pd.read_csv(BASE / "datos" / "mortalidad_infantil_mexico.csv", index_col="anio")["mortalidad_infantil"]
-anios_nodo = np.arange(1990, 2021, 5)
-xn_t, yn_t = anios_nodo.astype(float), serie[anios_nodo].to_numpy(float)
-a_t, b_t, c_t, d_t = spline_natural(xn_t, yn_t)
-coef_t = pd.DataFrame({"intervalo": [f"{i}-{i + 5}" for i in anios_nodo[:-1]], "a": a_t, "b": b_t, "c": c_t, "d": d_t})
-mostrar(coef_t.round(5), "Coeficientes del spline: S_j(t) = a + b (t - t_j) + c (t - t_j)^2 + d (t - t_j)^3")
+def spline_natural(xn, yn):
+    """Coeficientes a, b, c, d de S_j(x) = a_j + b_j (x - x_j) + c_j (x - x_j)^2 + d_j (x - x_j)^3."""
+    xn, yn = np.asarray(xn, float), np.asarray(yn, float)
+    n = len(xn) - 1
+    h = np.diff(xn)
+    A, lado = np.zeros((n + 1, n + 1)), np.zeros(n + 1)
+    A[0, 0] = A[n, n] = 1.0                                     # spline natural: S''(x_0) = S''(x_n) = 0
+    for j in range(1, n):                                       # continuidad de S' y S'' en los nodos interiores
+        A[j, j - 1], A[j, j], A[j, j + 1] = h[j - 1], 2 * (h[j - 1] + h[j]), h[j]
+        lado[j] = 3 * ((yn[j + 1] - yn[j]) / h[j] - (yn[j] - yn[j - 1]) / h[j - 1])
+    c = np.linalg.solve(A, lado)
+    b = np.diff(yn) / h - h * (2 * c[:-1] + c[1:]) / 3
+    d = np.diff(c) / (3 * h)
+    return yn[:-1], b, c[:-1], d
 
-intermedios = np.array([a for a in range(1990, 2021) if a not in anios_nodo])
-pred_t = pd.DataFrame({"real": serie[intermedios].to_numpy(),
-                       "spline": evaluar(xn_t, yn_t, intermedios, "cubico"),
-                       "lineal": evaluar(xn_t, yn_t, intermedios, "lineal")}, index=intermedios)
-pred_t["error_spline"] = pred_t["spline"] - pred_t["real"]
-pred_t["error_lineal"] = pred_t["lineal"] - pred_t["real"]
-mostrar(pred_t.round(2), "Predicción de los años que no son nodo")
-rmse_t = {m: float(np.sqrt((pred_t[f"error_{m}"] ** 2).mean())) for m in ("spline", "lineal")}
-max_t = {m: float(pred_t[f"error_{m}"].abs().max()) for m in ("spline", "lineal")}
-print("RMSE spline: %.3f | RMSE lineal: %.3f" % (rmse_t["spline"], rmse_t["lineal"]))
 
-ANIO_BASE, ANIO_EXTRA = 2006, 2023              # año de la base de países y año fuera de los nodos
-extra_t = float(evaluar(xn_t, yn_t, ANIO_EXTRA, "cubico", extrapolar=True)[0])
-dato_base = float(raw.loc["Mexico", "Infant mortality (per 1000 births)"])
-print("2006: spline %.2f, real %.1f, valor de la base de países %.2f" %
-      (pred_t.loc[ANIO_BASE, "spline"], serie[ANIO_BASE], dato_base))
-print("2023 (extrapolación): spline %.2f, real %.1f" % (extra_t, serie[ANIO_EXTRA]))
+def evaluar(xn, yn, x, metodo, extrapolar=False):
+    """Valor de la interpolación (lineal o spline cúbico) en x. Fuera de los nodos se usa el nodo extremo."""
+    xn, yn = np.asarray(xn, float), np.asarray(yn, float)
+    x = np.atleast_1d(np.asarray(x, float))
+    if not extrapolar:
+        x = np.clip(x, xn[0], xn[-1])
+    if metodo == "lineal":
+        return np.interp(x, xn, yn)
+    a, b, c, d = spline_natural(xn, yn)
+    j = np.clip(np.searchsorted(xn, x, side="right") - 1, 0, len(xn) - 2)
+    t = x - xn[j]
+    return a[j] + b[j] * t + c[j] * t ** 2 + d[j] * t ** 3
 
-fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 2.7), gridspec_kw={"width_ratios": [1.45, 1]})
-ts = np.linspace(1990, 2020, 400)
-te = np.linspace(2020, ANIO_EXTRA, 50)
-a.plot(serie.index, serie.values, "o", color="#b5b5b5", ms=2.8, label="dato real (Banco Mundial)")
-a.plot(ts, evaluar(xn_t, yn_t, ts, "lineal"), color=C1, lw=1, ls="--", label="interpolación lineal")
-a.plot(ts, evaluar(xn_t, yn_t, ts, "cubico"), color=C2, lw=1.3, label="spline cúbico natural")
-a.plot(te, evaluar(xn_t, yn_t, te, "cubico", extrapolar=True), color=C2, lw=1.3, ls=":", label="extrapolación")
-a.plot(xn_t, yn_t, "o", color="black", ms=3.8, label="nodos (cada 5 años)")
-a.plot([ANIO_BASE], [pred_t.loc[ANIO_BASE, "spline"]], "D", color="#c0392b", ms=4.5, mec="white", mew=.5,
-       label=f"predicción {ANIO_BASE}")
-a.set_xlabel("año"); a.set_ylabel("muertes por cada 1000 nacimientos")
-a.legend(frameon=False, fontsize=5.8)
-ancho = .38
-b.bar(np.arange(len(intermedios)) - ancho / 2, pred_t["error_lineal"], ancho, color=C1, label="lineal")
-b.bar(np.arange(len(intermedios)) + ancho / 2, pred_t["error_spline"], ancho, color=C2, label="spline cúbico")
+
+def derivada(xn, yn, x):
+    """Derivada del spline cúbico natural: S_j'(x) = b_j + 2 c_j (x - x_j) + 3 d_j (x - x_j)^2."""
+    xn = np.asarray(xn, float)
+    x = np.clip(np.atleast_1d(np.asarray(x, float)), xn[0], xn[-1])
+    a, b, c, d = spline_natural(xn, yn)
+    j = np.clip(np.searchsorted(xn, x, side="right") - 1, 0, len(xn) - 2)
+    t = x - xn[j]
+    return b[j] + 2 * c[j] * t + 3 * d[j] * t ** 2
+
+
+from scipy.interpolate import CubicSpline
+X_SP, Y_SP = "GDP ($ per capita)", "Infant mortality (per 1000 births)"
+base_sp = observados[[X_SP, Y_SP]].dropna()                     # solo valores observados (sin imputar)
+es_prueba = np.random.default_rng(0).permutation(len(base_sp)) < round(.2 * len(base_sp))
+entren, prueba = base_sp[~es_prueba], base_sp[es_prueba]
+xn_p, yn_p = nodos(entren[X_SP], entren[Y_SP])
+a_p, b_p, c_p, d_p = spline_natural(xn_p, yn_p)
+_xs = np.linspace(xn_p[0], xn_p[-1], 2000)
+spline_ok = bool(np.allclose(evaluar(xn_p, yn_p, _xs, "cubico"), CubicSpline(xn_p, yn_p, bc_type="natural")(_xs)))
+print("países de entrenamiento:", len(entren), "| de prueba:", len(prueba))
+print("spline_natural coincide con scipy.interpolate.CubicSpline:", spline_ok)
+RESULTADOS["spline_ok"] = spline_ok
+mostrar(pd.DataFrame({"PIB per cápita": xn_p, "mortalidad infantil": yn_p}).round(2), "Nodos del spline")
+mostrar(pd.DataFrame({"intervalo": [f"{xn_p[j]:,.0f}-{xn_p[j + 1]:,.0f}" for j in range(len(xn_p) - 1)],
+                      "a": a_p, "b": b_p, "c": c_p, "d": d_p}),
+        "Coeficientes del spline: S_j(x) = a + b (x - x_j) + c (x - x_j)^2 + d (x - x_j)^3")
+
+pred_p = pd.DataFrame({"PIB": prueba[X_SP], "real": prueba[Y_SP],
+                       "spline": evaluar(xn_p, yn_p, prueba[X_SP], "cubico"),
+                       "lineal": evaluar(xn_p, yn_p, prueba[X_SP], "lineal")}).sort_values("PIB")
+pred_p["error_spline"] = pred_p["spline"] - pred_p["real"]
+pred_p["error_lineal"] = pred_p["lineal"] - pred_p["real"]
+mostrar(pred_p.round(2), "Predicción de los países de prueba")
+rmse_p = {m: float(np.sqrt((pred_p[f"error_{m}"] ** 2).mean())) for m in ("spline", "lineal")}
+rmse_p["media"] = float(np.sqrt(((entren[Y_SP].mean() - prueba[Y_SP]) ** 2).mean()))   # referencia sin PIB
+print("RMSE spline: %.2f | lineal: %.2f | solo la media: %.2f" % (rmse_p["spline"], rmse_p["lineal"], rmse_p["media"]))
+
+PIB_DER = [1000, 5000, 10000, 20000]
+der_p = {int(v): float(1000 * derivada(xn_p, yn_p, v)[0]) for v in PIB_DER}   # cambio por cada 1,000 dólares
+mostrar(pd.Series(der_p).round(2).to_frame("cambio por cada 1,000 dólares"), "Derivada del spline")
+pos = _xs[derivada(xn_p, yn_p, _xs) > 0]
+mex_pib, mex_real = float(raw.loc["Mexico", X_SP]), float(raw.loc["Mexico", Y_SP])
+mex = {"pib": mex_pib, "real": mex_real, "pred": float(evaluar(xn_p, yn_p, mex_pib, "cubico")[0]),
+       "pred_doble": float(evaluar(xn_p, yn_p, 2 * mex_pib, "cubico")[0]), "en_prueba": bool("Mexico" in prueba.index),
+       "j": int(np.searchsorted(xn_p, mex_pib, side="right") - 1)}
+print("México: PIB %.0f, real %.2f, spline %.2f; con el doble de PIB: %.2f" % (mex_pib, mex_real, mex["pred"], mex["pred_doble"]))
+
+fig, (a, b) = plt.subplots(1, 2, figsize=(6.6, 2.75), gridspec_kw={"width_ratios": [1.35, 1]})
+xs = np.linspace(xn_p[0], xn_p[-1], 600)
+a.scatter(entren[X_SP], entren[Y_SP], s=5, color="#b5b5b5", linewidths=0, label="países de entrenamiento")
+a.scatter(prueba[X_SP], prueba[Y_SP], s=9, color=C1, linewidths=0, label="países de prueba")
+a.plot(xs, evaluar(xn_p, yn_p, xs, "lineal"), color=C1, lw=.9, ls="--", label="interpolación lineal")
+a.plot(xs, evaluar(xn_p, yn_p, xs, "cubico"), color=C2, lw=1.4, label="spline cúbico natural")
+a.plot(xn_p, yn_p, "o", color="black", ms=3.5, label="nodos")
+a.plot([mex_pib], [mex["pred"]], "D", color="#c0392b", ms=4.5, mec="white", mew=.5, label="predicción para México")
+a.set_xlabel("PIB per cápita (USD)"); a.set_ylabel("mortalidad infantil (por cada 1000)")
+a.legend(frameon=False, fontsize=5.6)
+b.plot(xs, 1000 * derivada(xn_p, yn_p, xs), color=C2, lw=1.4)
 b.axhline(0, color="gray", lw=.5)
-b.set_xticks(np.arange(len(intermedios))[::3]); b.set_xticklabels(intermedios[::3], fontsize=6)
-b.set_xlabel("año predicho"); b.set_ylabel("error (predicción − real)")
-b.legend(frameon=False, fontsize=6)
-fig.tight_layout(); guardar(fig, "fig_spline_tiempo.png")
+b.plot(PIB_DER, [der_p[v] for v in PIB_DER], "o", color="black", ms=3)
+b.set_xlabel("PIB per cápita (USD)"); b.set_ylabel("cambio por cada 1,000 USD")
+fig.tight_layout(); guardar(fig, "fig_spline_pib.png")
 
-pred_t.to_csv(RES / "prediccion_spline_tiempo.csv", encoding="utf-8")
-j_base = int(np.searchsorted(xn_t, ANIO_BASE, side="right") - 1)
-RESULTADOS["spline_tiempo"] = {
-    "nodos": [[int(x), float(y)] for x, y in zip(anios_nodo, yn_t)],
-    "coef": [[float(v) for v in fila] for fila in zip(a_t, b_t, c_t, d_t)],
-    "intermedios": {int(a): [float(f["real"]), float(f["spline"]), float(f["lineal"])] for a, f in pred_t.iterrows()},
-    "rmse": rmse_t, "max": max_t, "anio_base": ANIO_BASE, "j_base": j_base,
-    "pred_base": float(pred_t.loc[ANIO_BASE, "spline"]), "real_base": float(serie[ANIO_BASE]),
-    "dato_base": dato_base, "anio_extra": ANIO_EXTRA, "pred_extra": extra_t, "real_extra": float(serie[ANIO_EXTRA]),
-    "peor": [int(pred_t["error_spline"].abs().idxmax()), float(pred_t["error_spline"].abs().max())],
+pred_p.to_csv(RES / "prediccion_spline_pib.csv", encoding="utf-8")
+RESULTADOS["spline_pib"] = {
+    "n_entren": int(len(entren)), "n_prueba": int(len(prueba)),
+    "nodos": [[float(x), float(y)] for x, y in zip(xn_p, yn_p)],
+    "coef": [[float(v) for v in fila] for fila in zip(a_p, b_p, c_p, d_p)],
+    "prueba": {pais: [float(f["PIB"]), float(f["real"]), float(f["spline"]), float(f["lineal"])] for pais, f in pred_p.iterrows()},
+    "rmse": rmse_p, "derivada": der_p, "mexico": mex,
+    "positiva": [float(pos.min()), float(pos.max()), float(1000 * derivada(xn_p, yn_p, pos).max())] if len(pos) else None,
 }
+
+# %% [markdown]
+# ## 4.1 Evidencia para la hipótesis H2: rendimientos decrecientes
+# La H2 dice que las primeras mejoras en infraestructura van acompañadas de saltos grandes en alfabetización y
+# en la estructura económica, y que después el efecto se agota. Para verlo con los datos se usan los mismos
+# nodos de la sección 2.3 (países ordenados por teléfonos, en 8 grupos) y se compara la pendiente del primer
+# tramo entre nodos con la del último: cuánto cambia la variable por cada 100 líneas telefónicas.
+
+# %%
+H2_VARS = ["Literacy (%)", "Agriculture", "Infant mortality (per 1000 births)"]
+x_h2 = "Phones (per 1000)"
+evidencia_h2 = {}
+fig, axes = plt.subplots(1, len(H2_VARS), figsize=(6.6, 2.4))
+for ax, v in zip(axes, H2_VARS):
+    xn, yn = nodos(datos[x_h2], datos[v])
+    pend = 100 * np.diff(yn) / np.diff(xn)                     # cambio por cada 100 teléfonos en cada tramo
+    evidencia_h2[v] = {"nodos": [[float(a_), float(b_)] for a_, b_ in zip(xn, yn)], "pendientes": pend.tolist(),
+                       "r": float(datos[[x_h2, v]].corr().iloc[0, 1]),
+                       "spearman": float(datos[[x_h2, v]].corr(method="spearman").iloc[0, 1])}
+    xs = np.linspace(xn[0], xn[-1], 300)
+    ax.scatter(datos[x_h2], datos[v], s=4, color="#b5b5b5", linewidths=0)
+    ax.plot(xs, interpolar(xn, yn, xs), color=C1, lw=1.2)
+    ax.plot(xn, yn, "o", color="black", ms=3)
+    ax.plot(xn[:2], yn[:2], color=C2, lw=2.4, solid_capstyle="round", label="primer tramo")
+    ax.set_xlabel(NOMBRES[x_h2]); ax.set_ylabel(NOMBRES[v])
+    ax.set_title(f"pendiente del primer tramo: {pend[0]:+.3g}\npendiente del último tramo: {pend[-1]:+.3g}"
+                 .replace("-", "−"), loc="left", fontsize=6.2)
+fig.tight_layout(); guardar(fig, "fig_rendimientos.png")
+mostrar(pd.DataFrame({NOMBRES[v]: e["pendientes"] for v, e in evidencia_h2.items()},
+                     index=[f"tramo {j + 1}" for j in range(len(evidencia_h2[H2_VARS[0]]["pendientes"]))]).round(3),
+        "Cambio de cada variable por cada 100 teléfonos, tramo por tramo")
+RESULTADOS["evidencia_h2"] = evidencia_h2
 
 # %% [markdown]
 # ## Resultados para el reporte
