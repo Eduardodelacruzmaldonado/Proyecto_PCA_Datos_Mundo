@@ -279,16 +279,16 @@ story.append(PageBreak())
 val_z, prop_z, acum_z = R["val_z"], R["prop_z"], R["acum_z"]
 k = R["k"]
 story.append(Paragraph("Resumen", h1))
-P(f"Se realiza un análisis exploratorio de {R['n_paises']} países descritos por {R['n_columnas']} variables demográficas, "
-  "económicas y geográficas (<i>Countries of the World</i>, Kaggle) para saber si pueden resumirse en pocas componentes "
-  "principales (PCA). Se depuró la base (variables redundantes descartadas, tres territorios eliminados, vacíos estimados por "
-  "interpolación y logaritmo en las variables muy asimétricas) y se obtuvieron gráficas, medidas descriptivas, valores atípicos y "
-  "matrices de covarianza y correlación. Luego se aplicó el PCA con y sin estandarización y se eligió el número de componentes "
-  f"con el criterio de Kaiser. Con datos estandarizados, cuatro componentes explican "
-  f"{100 * acum_z[k - 1]:.1f} % de la varianza y la primera ({100 * prop_z[0]:.1f} %) funciona como un eje de nivel de desarrollo; "
-  f"sin estandarizar, la primera explica {100 * R['prop_s'][0]:.2f} % pero solo refleja el PIB per cápita, por lo que estandarizar "
-  "es indispensable. Además, un spline cúbico predijo la mortalidad infantil de México en años "
-  f"intermedios con un error de {R['spline_tiempo']['rmse']['spline']:.2f} muertes por cada 1000 nacimientos.")
+P(f"Analizamos {R['n_paises']} países descritos por {R['n_columnas']} variables demográficas, económicas y geográficas "
+  "(<i>Countries of the World</i>, Kaggle) para saber si se pueden resumir en pocas componentes principales (PCA). Antes depuramos "
+  "la base: descartamos variables redundantes, eliminamos tres territorios, estimamos los vacíos por interpolación y aplicamos "
+  "logaritmo a las variables muy asimétricas. Después obtuvimos gráficas, medidas descriptivas, valores atípicos y las matrices de "
+  "covarianza y correlación, y aplicamos el PCA con y sin estandarización, eligiendo el número de componentes con el criterio de "
+  f"Kaiser. Con datos estandarizados, cuatro componentes explican {100 * acum_z[k - 1]:.1f} % de la varianza y la primera "
+  f"({100 * prop_z[0]:.1f} %) funciona como un eje de nivel de desarrollo. Sin estandarizar, la primera explica "
+  f"{100 * R['prop_s'][0]:.2f} % pero solo refleja el PIB per cápita, por lo que estandarizar es necesario. También probamos que un "
+  f"spline cúbico predice la mortalidad infantil de México en años intermedios con un error de "
+  f"{R['spline_tiempo']['rmse']['spline']:.2f} muertes por cada 1000 nacimientos.")
 P("<b>Palabras clave:</b> análisis exploratorio, componentes principales, estandarización, correlación, interpolación, splines "
   "cúbicos, indicadores de países.",
   ParagraphStyle("pc", fontName="Serif", fontSize=8.5, leading=11))
@@ -311,11 +311,11 @@ story.append(PageBreak())
 # =============================================================================================
 H1("1. Introducción")
 H2("1.1 Objetivo e hipótesis de trabajo")
-P("El objetivo de este trabajo es realizar un análisis exploratorio del conjunto de datos <i>Countries of the World</i> [1], "
-  "con la base ya depurada, determinar si los indicadores demográficos, económicos y geográficos de los países pueden "
-  "resumirse en unas pocas componentes principales sin perder demasiada información. El análisis sigue el siguiente flujo "
-  "planteado: datos, exploración (gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), "
-  "corrección de los datos y reducción de dimensiones con PCA.")
+P("El objetivo de este trabajo es hacer un análisis exploratorio del conjunto de datos <i>Countries of the World</i> [1] y, una "
+  "vez depurada la base, determinar si los indicadores demográficos, económicos y geográficos de los países pueden resumirse en "
+  "unas pocas componentes principales sin perder demasiada información. Seguimos el flujo visto en clase: datos, exploración "
+  "(gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), corrección de los datos y reducción de "
+  "dimensiones con PCA.")
 P("Partimos de dos hipótesis, que se retoman en la Discusión (sección 4). <b>H1:</b> muchas variables miden en el fondo el nivel "
   "de desarrollo de un país (salud, ingreso, educación, estructura económica), por lo que estarán fuertemente correlacionadas y "
   "unas pocas componentes bastarán para resumir buena parte de la varianza. <b>H2:</b> como las variables están en unidades muy "
@@ -693,11 +693,7 @@ DESCRIP = {
     "Service": "Es la más simétrica de todas, sin valores atípicos.",
 }
 for _, fila in estad.iterrows():
-    atip = int(fila["atip"])
-    atip_txt = f"{atip} valor atípico" if atip == 1 else f"{atip} valores atípicos"
-    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]} Asimetría {fila['asim']:.1f}; media de "
-                                   f"{num(fila['media'])} frente a la mediana {num(fila['mediana'])}; {atip_txt} por el criterio "
-                                   "del rango intercuartílico.", fila["archivo"][:-4])
+    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]}", fila["archivo"][:-4])
 asim = estad.set_index("var")["asim"]
 muy_asim = asim[asim.abs() >= 3].sort_values(ascending=False)
 P("En conjunto, casi todas las variables tienen asimetría positiva (la media es mayor que la mediana). Las más asimétricas son "
@@ -1065,8 +1061,8 @@ figura("fig_biplot.png", 445, "Países en el plano de CP1 y CP2, coloreados por 
 mg = R["media_grupo_cp1"]
 P("Las regiones se ordenan sobre la CP1 como cabría esperar. Las puntuaciones medias son: "
   f"{', '.join(f'{g} {m:.2f}' for g, m in list(mg.items())[:-1])} y {list(mg)[-1]} {list(mg.values())[-1]:.2f}. Los puntos más "
-  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}. Que una variable "
-  "reproduzca la geografía del desarrollo es una señal de que las componentes recogen estructura real y no ruido.")
+  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}. Que las componentes, construidas solo "
+  "con números, reproduzcan la geografía del desarrollo sugiere que recogen algo real y no ruido.")
 
 H3("3.5.6 Regresar a la matriz original: reconstrucción con k componentes")
 P("Una forma de juzgar la reducción es volver de las componentes a la matriz de datos y comparar con la original. Reconstruimos la "
@@ -1080,7 +1076,7 @@ P("<b>Desarrollo.</b> Las puntuaciones se calcularon con <i>T</i> = <i>Z V</i>. 
 formula("recon_paso1", r"$T=Z\,V\quad\Rightarrow\quad T\,V^{\top}=Z\,V\,V^{\top}=Z\,I=Z$", 12)
 P("Con las <i>p</i> componentes el regreso es exacto. Si solo se conservan las primeras <i>k</i> columnas de <i>T</i> y de "
   "<i>V</i>, el mismo producto da una aproximación, que es la suma de lo que aporta cada componente conservada; lo que se pierde "
-  "es justo lo que aportaban las componentes descartadas:")
+  "es lo que aportaban las componentes descartadas:")
 formula("recon_paso2", r"$\hat{Z}_k=T_k\,V_k^{\top}=\sum_{j=1}^{k}t_j\,v_j^{\top}\qquad\qquad Z-\hat{Z}_k=\sum_{j=k+1}^{p}t_j\,v_j^{\top}$", 12)
 P("Después se deshacen, en orden inverso, las dos transformaciones que se aplicaron a los datos. La estandarización fue "
   "<i>z<sub>ij</sub></i> = (<i>y<sub>ij</sub></i> − media<sub>j</sub>) / <i>s<sub>j</sub></i>, así que se multiplica por la "
@@ -1120,7 +1116,7 @@ for _i, _pais in enumerate(_rp["paises"]):
         filas.append([_nom[_pais] if _j == 0 else "", N(_var), num(_rp["original"][_i][_j]), num(_rp["k2"][_i][_j]), num(_rp["k4"][_i][_j])])
 tabla("recon", "Valores originales y reconstruidos con 2 y 4 componentes para tres países (escala original).", filas,
       [80, 130, 80, 80, 80])
-P(f"La reconstrucción de México con cuatro componentes es razonable (PIB per cápita de {_rp['k4'][0][0]:,.0f} contra "
+P(f"La reconstrucción de México con cuatro componentes sale bien (PIB per cápita de {_rp['k4'][0][0]:,.0f} contra "
   f"{_rp['original'][0][0]:,.0f} reales). Los extremos "
   "muestran el límite del método: para Alemania, la mortalidad infantil reconstruida con dos componentes es negativa, y para Níger el "
   "PIB per cápita sale negativo con dos y con cuatro componentes. El PCA es lineal y no sabe que estas variables no pueden ser "
@@ -1220,65 +1216,67 @@ P(f"<b>Fuera de los nodos.</b> También probamos {_st['anio_extra']}, que está 
 # =============================================================================================
 H1("4. Discusión")
 H2("4.1 Comparación con las hipótesis")
-P(f"<b>H1 (las variables miden desarrollo y se pueden resumir).</b> Se cumple en lo esencial. {R['n_pares_05']} de los "
-  f"{R['n_pares']} pares de variables tienen |r| ≥ 0.5 y se forma un bloque claro de desarrollo; la primera componente "
-  f"({100 * prop_z[0]:.1f} %) ordena a las regiones de África a Europa. La comparación de la sección 3.4.4 lo muestra de forma "
-  f"directa: las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}) se condensan en la CP1, mientras que "
-  f"{n_(bottom2[0])} y {n_(bottom2[1])}, las menos correlacionadas, solo aparecen en componentes posteriores. Sin embargo, la "
-  f"reducción es moderada: hacen falta cuatro componentes para llegar a {100 * acum_z[3]:.1f} %. Es decir, los {p_} indicadores no se reducen "
-  "a una sola dimensión, porque las variables geográficas (tierra cultivable, cultivos permanentes, costa) aportan estructura propia.")
-P(f"<b>H2 (la estandarización es necesaria).</b> Se cumple de forma contundente: sin estandarizar, la CP1 explica "
-  f"{100 * R['prop_s'][0]:.2f} % de la varianza y es prácticamente el PIB per cápita; estandarizando, explica "
-  f"{100 * prop_z[0]:.1f} % y recibe peso de {R['n_cargas_05']} variables.")
+P(f"<b>H1.</b> Se cumplió en general. {R['n_pares_05']} de los {R['n_pares']} pares de variables tienen |r| ≥ 0.5 y las variables de "
+  f"salud, ingreso y educación forman un bloque bien definido. La primera componente ({100 * prop_z[0]:.1f} %) ordena a los países de "
+  f"África a Europa, y la comparación de la sección 3.4.4 lo confirma: las cuatro variables más correlacionadas "
+  f"({lista([n_(v) for v in top4])}) cargan sobre la CP1, mientras que {n_(bottom2[0])} y {n_(bottom2[1])}, las menos "
+  f"correlacionadas, aparecen en componentes posteriores. Aun así, la reducción no es drástica: necesitamos cuatro componentes para "
+  f"llegar a {100 * acum_z[3]:.1f} %, porque las variables geográficas (tierra cultivable, cultivos permanentes y costa) tienen su "
+  "propia estructura y no se resumen en un solo eje.")
+P(f"<b>H2.</b> También se cumplió, y por mucho: sin estandarizar, la CP1 explica {100 * R['prop_s'][0]:.2f} % de la varianza y es "
+  f"casi solo el PIB per cápita; estandarizando explica {100 * prop_z[0]:.1f} % y le dan peso {R['n_cargas_05']} variables.")
 H2("4.2 Limitaciones")
-P(f"Las principales limitaciones del análisis son: (1) en migración neta, {R['ceros_migracion']} países tienen exactamente cero, y es probable que algunos de "
-  "esos ceros sean datos no disponibles, lo que debilita su correlación con las demás variables; (2) la imputación por interpolación "
-  f"estima cada vacío con una sola variable predictora y su error de validación sigue siendo apreciable en la variable más afectada "
-  f"({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países imputados y un RMSE de "
-  f"{min(R['imputacion'][imp[0][0]]['rmse_lineal'], R['imputacion'][imp[0][0]]['rmse_cubico']):.1f} puntos porcentuales); (3) los datos son de mediados de la década de 2000, de modo que las conclusiones describen ese periodo; (4) la "
-  "interpretación de la CP2, CP3 y CP4 es nuestra lectura de las cargas; (5) la clasificación en variables independientes y "
-  "dependientes se apoya en correlaciones, que no prueban causalidad; (6) la selección de las variables más y menos "
-  "correlacionadas usa la correlación de Pearson, que no capta relaciones no lineales como la saturación de la alfabetización; (7) al regresar a la matriz original con cuatro componentes algunas variables se recuperan mal y, en países extremos como Níger, aparecen valores imposibles (negativos), porque el PCA es lineal y no sabe que el PIB o la densidad no pueden ser negativos; y (8) la predicción con splines se probó "
-  "con una sola serie, que además es muy suave, y fuera del intervalo de los nodos el spline solo prolonga su último polinomio, "
-  "por lo que no debe usarse para extrapolar a muchos años.")
+P(f"<b>Sobre los datos.</b> En migración neta, {R['ceros_migracion']} países tienen exactamente cero y es probable que algunos de "
+  "esos ceros sean datos que faltan, lo que debilita su correlación con las demás variables. La información, además, es de mediados "
+  "de la década de 2000, así que las conclusiones describen ese periodo. Los vacíos se estimaron por interpolación con una sola "
+  f"variable predictora; en la más afectada ({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países imputados) el error de "
+  f"validación sigue siendo apreciable, con un RMSE de "
+  f"{min(R['imputacion'][imp[0][0]]['rmse_lineal'], R['imputacion'][imp[0][0]]['rmse_cubico']):.1f} puntos porcentuales.")
+P("<b>Sobre el método.</b> La interpretación de la CP2, la CP3 y la CP4 es nuestra lectura de las cargas. La clasificación en "
+  "variables independientes y dependientes se apoya en correlaciones, que no prueban causalidad, y la correlación de Pearson no capta "
+  "relaciones no lineales como la saturación de la alfabetización. Al regresar a la matriz original con cuatro componentes algunas "
+  "variables se recuperan mal y, en países extremos como Níger, salen valores imposibles (un PIB negativo), porque el PCA es lineal y "
+  "no sabe que ese dato no puede ser negativo.")
+P("<b>Sobre la predicción con splines.</b> Se probó con una sola serie, y además muy suave. Fuera del intervalo de los nodos el "
+  "spline solo prolonga su último polinomio, así que no sirve para extrapolar a muchos años.")
 H2("4.3 Cómo se podría mejorar el análisis")
-P("Con más tiempo se podría: tratar los ceros de migración neta como faltantes y repetir el análisis; imputar cada vacío con varias variables predictoras a "
-  f"la vez en lugar de una sola; repetir el PCA sin los territorios muy pequeños ({', '.join(dl[2])}) para "
-  "ver si cambian las componentes; complementar la correlación de Pearson con la de Spearman, que capta relaciones monótonas no "
-  "lineales; actualizar los datos con fuentes más recientes; y usar las componentes como variables explicativas en un modelo para "
-  "el PIB per cápita o la mortalidad infantil.")
+P(f"Con más tiempo haríamos varias cosas. Trataríamos los ceros de migración neta como faltantes y repetiríamos el análisis. "
+  f"Imputaríamos cada vacío con varias variables a la vez en lugar de una sola. Repetiríamos el PCA sin los territorios muy pequeños "
+  f"({', '.join(dl[2])}) para ver si cambian las componentes. Compararíamos Pearson con Spearman, que sí capta relaciones monótonas "
+  "no lineales. Y, ya con datos más recientes, usaríamos las componentes como variables explicativas de un modelo para el PIB per "
+  "cápita o la mortalidad infantil.")
 
 # =============================================================================================
 # 5. CONCLUSIONES
 # =============================================================================================
 H1("5. Conclusiones")
 _mej3 = [R["imputacion"][v]["mejora"] for v, _ in imp[:3]]
-P(f"Partimos de {R['n_paises']} países y {R['n_columnas']} variables. Después de la depuración quedaron {R['n_depurados']} países "
-  f"y {p_} variables numéricas; descartamos las variables categóricas y las redundantes (otros usos del suelo, industria) con razones "
-  "explícitas, estimamos los vacíos restantes por interpolación sobre nodos (lineal o con spline cúbico, según el error de "
-  f"validación de cada variable), con un error entre {min(_mej3):.0f} % y {max(_mej3):.0f} % menor que el de la mediana regional "
-  "en las tres variables con más vacíos, y transformamos con logaritmo las tres variables de asimetría extrema.")
+P(f"Partimos de {R['n_paises']} países y {R['n_columnas']} variables y terminamos con {R['n_depurados']} países y {p_} variables "
+  "numéricas. Descartamos las variables categóricas y las redundantes (otros usos del suelo e industria) y explicamos cada decisión. "
+  "Los vacíos que quedaron los estimamos por interpolación, lineal o con spline cúbico según el error de validación de cada "
+  f"variable; en las tres con más vacíos, el error quedó entre {min(_mej3):.0f} % y {max(_mej3):.0f} % por debajo del que da la "
+  "mediana regional. Las tres variables de asimetría extrema las transformamos con logaritmo.")
 P("Las correlaciones muestran un bloque de variables que describe el nivel de desarrollo (mortalidad infantil, natalidad, "
-  "alfabetización, PIB per cápita, teléfonos, agricultura y servicios), mientras que las condiciones geográficas (tierra cultivable, "
-  f"cultivos permanentes, costa) se relacionan poco con él. Las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}, "
+  "alfabetización, PIB per cápita, teléfonos, agricultura y servicios) y unas condiciones geográficas (tierra cultivable, cultivos "
+  f"permanentes y costa) que se relacionan poco con él. Las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}, "
   f"con |r| promedio de {R['top4_puntaje']:.2f}) son casi redundantes y se resumen en la primera componente; las dos menos "
-  f"correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) aportan información propia. Por eso clasificamos las condiciones "
-  "geográficas como independientes y el bloque como dependiente, aclarando que se trata de una hipótesis y no de una prueba de causalidad.")
-P(f"Con datos estandarizados, cuatro componentes explican {100 * acum_z[3]:.1f} % de la varianza. La primera (el "
-  f"{100 * prop_z[0]:.1f} %) es un eje de desarrollo que ordena a las regiones de forma coherente.")
-P("Al regresar a la matriz original con cuatro componentes se recuperan razonablemente las variables de desarrollo (mortalidad infantil, natalidad, teléfonos, PIB per cápita), pero no las geográficas de colas largas (densidad de población y costa/área); la reconstrucción es una aproximación y puede dar valores imposibles en países extremos.")
-P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas y pierde su utilidad. Las variables de este conjunto "
-  "están en unidades distintas (dólares, porcentajes, fracciones, razones), así que estandarizar es la decisión adecuada y la que "
-  "usamos para elegir las componentes. Solo tendría sentido no estandarizar si todas las variables estuvieran en la misma unidad y "
-  "la diferencia de varianzas fuera información que se quiere conservar, y aquí no es el caso.")
-P(f"El spline cúbico natural construido con los datos de cada cinco años de la mortalidad infantil de México predijo los "
-  f"{len(_st['intermedios'])} años intermedios con un error (RMSE) de {_st['rmse']['spline']:.2f} muertes por cada 1000 nacimientos, "
-  f"{_st['rmse']['lineal'] / _st['rmse']['spline']:.0f} veces menor que el de la interpolación lineal; para {_st['anio_base']}, el año "
-  f"aproximado de la base de países, estimó {_st['pred_base']:.2f} frente al dato real de {_st['real_base']:.1f}.")
-P("Limitaciones: los datos son de "
-  "mediados de los años 2000; una parte pequeña de los valores es estimada por interpolación; y el cero de migración neta puede "
-  "ser un dato faltante disfrazado. Una extensión natural sería ajustar un modelo para el PIB per cápita o la mortalidad infantil "
-  "usando las componentes como predictores.")
+  f"correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) aportan información propia. Por eso tomamos las condiciones geográficas "
+  "como independientes y el bloque de desarrollo como dependiente, con la aclaración de que es una hipótesis y no una prueba de causalidad.")
+P(f"Con datos estandarizados, cuatro componentes explican {100 * acum_z[3]:.1f} % de la varianza. La primera "
+  f"({100 * prop_z[0]:.1f} %) funciona como un eje de desarrollo que ordena a las regiones de forma coherente. Al regresar a la "
+  "matriz original con esas cuatro componentes se recuperan bien las variables de desarrollo (mortalidad infantil, natalidad, "
+  "teléfonos y PIB per cápita), pero no la densidad ni la razón costa/área, y en países extremos la reconstrucción puede dar valores "
+  "imposibles.")
+P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas. Como las variables están en unidades distintas "
+  "(dólares, porcentajes, fracciones y razones), estandarizar es la decisión correcta y es la que usamos para elegir las "
+  "componentes. No estandarizar solo tendría sentido si todas las variables tuvieran la misma unidad y la diferencia de varianzas "
+  "fuera información que se quiere conservar.")
+P(f"Con los datos de mortalidad infantil de México cada cinco años, un spline cúbico natural predijo los "
+  f"{len(_st['intermedios'])} años intermedios con un RMSE de {_st['rmse']['spline']:.2f} muertes por cada 1000 nacimientos, "
+  f"{_st['rmse']['lineal'] / _st['rmse']['spline']:.0f} veces menor que el de la interpolación lineal. Para {_st['anio_base']}, el "
+  f"año aproximado de la base de países, estimó {_st['pred_base']:.2f} frente al dato real de {_st['real_base']:.1f}.")
+P("Los datos son de mediados de los años 2000, así que lo que describimos es la situación de ese periodo. Una extensión natural "
+  "es usar las componentes como predictores del PIB per cápita o de la mortalidad infantil.")
 
 # =============================================================================================
 # 6. BIBLIOGRAFÍA
