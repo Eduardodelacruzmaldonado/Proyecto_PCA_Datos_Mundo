@@ -325,7 +325,7 @@ H2("1.2 Justificación y antecedentes")
 P("Los países se describen con decenas de indicadores y varios de ellos dicen casi lo mismo. Resumirlos en pocas dimensiones "
   "permite comparar países, visualizarlos en un plano y usar menos variables en modelos posteriores.")
 P("El análisis de componentes principales es una técnica clásica para reducir dimensiones [2], y los criterios para decidir "
-  "cuántas componentes conservar se han estudiado desde hace décadas [3, 10]. Como antecedente de la idea de resumir el desarrollo "
+  "cuántas componentes conservar se han estudiado desde hace décadas [3]. Como antecedente de la idea de resumir el desarrollo "
   "de un país con pocas dimensiones, el Índice de Desarrollo Humano del PNUD [4] combina salud, educación e ingreso en un solo "
   "indicador; a diferencia del PCA, se construye con una fórmula fija y no a partir de la estructura de los datos.")
 H2("1.3 Origen y descripción de los datos")
@@ -370,7 +370,7 @@ P("Todo el análisis se hizo en Python con estos paquetes: pandas [5] (lectura d
   "con <i>qcut</i> y <i>groupby</i>, y los métodos <i>mean, median, var, std, skew, cov</i> y <i>corr</i>); NumPy [6] "
   "(matriz de covarianza con <i>numpy.cov</i>, valores y vectores propios con <i>numpy.linalg.eigh</i>, solución del sistema del "
   "spline con <i>numpy.linalg.solve</i> y <i>log10</i>); "
-  "Matplotlib [7] y seaborn [8] (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy [11] (valor crítico de la "
+  "Matplotlib [7] y seaborn [8] (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy [10] (valor crítico de la "
   "correlación y comprobación del spline cúbico con <i>CubicSpline</i>) y scikit-learn [9], cuya clase <i>PCA</i> usamos solo "
   "para verificar nuestro cálculo. El código completo, con el cálculo de cada tabla y de cada figura, está explicado en el "
   "notebook <i>analisis_pca.ipynb</i> del repositorio del proyecto.")
@@ -444,7 +444,7 @@ P(f"El PCA produce tantas componentes como variables (aquí <i>p</i> = {p_}) y s
   "un compromiso entre dos errores. Si se conservan <b>muy pocas</b>, se pierde estructura real de los datos. Si se conservan "
   "<b>demasiadas</b>, se incluyen componentes que solo reflejan el ruido del muestreo o la variación propia de una sola variable: "
   "no se pueden interpretar y cambiarían con otra muestra de países.")
-P("<b>Criterio de Kaiser [3, 10].</b> Con datos estandarizados se conservan las componentes cuyo valor propio es mayor que 1:")
+P("<b>Criterio de Kaiser [3].</b> Con datos estandarizados se conservan las componentes cuyo valor propio es mayor que 1:")
 formula("kaiser", r"$\mathrm{tr}(R)=\lambda_1+\lambda_2+\cdots+\lambda_p=p\quad\Rightarrow\quad\bar{\lambda}=1;"
                   r"\qquad\mathrm{se\ conserva\ la\ CP}_j\ \mathrm{si}\ \lambda_j>1$", 12)
 P("La justificación es la siguiente. Al estandarizar, cada variable tiene varianza 1, así que la varianza total es la traza de la "
@@ -544,7 +544,7 @@ P("<b>Nodos.</b> Sean <i>x</i> la variable predictora e <i>y</i> la variable con
 P("<b>Interpolación lineal.</b> Une cada par de nodos consecutivos con una recta. Para un país cuyo valor <i>x</i> está entre "
   "<i>x<sub>j</sub></i> y <i>x</i><sub><i>j</i>+1</sub>, el valor estimado es:")
 formula("interp_lineal", r"$L_j(x)=y_j+\dfrac{y_{j+1}-y_j}{x_{j+1}-x_j}\,(x-x_j)$", 12)
-P("<b>Spline cúbico natural [12].</b> En lugar de rectas usa un polinomio de grado 3 en cada intervalo, de modo que la curva "
+P("<b>Spline cúbico natural [11].</b> En lugar de rectas usa un polinomio de grado 3 en cada intervalo, de modo que la curva "
   "completa es suave. En el intervalo [<i>x<sub>j</sub></i>, <i>x</i><sub><i>j</i>+1</sub>], con <i>j</i> = 0, …, <i>n</i> − 1:")
 formula("spline_def", r"$S_j(x)=a_j+b_j\,(x-x_j)+c_j\,(x-x_j)^2+d_j\,(x-x_j)^3$", 12)
 P("Hay 4<i>n</i> coeficientes por determinar, y se les piden 4<i>n</i> condiciones: que cada polinomio pase por sus dos nodos "
@@ -649,7 +649,7 @@ P("<b>Reconstrucción (3.5.6).</b> Con las puntuaciones <i>T</i> y los vectores 
 P("<b>Comparación con y sin estandarización (3.6).</b> Se repite el mismo cálculo sobre la misma base transformada, una vez con los "
   "datos solo centrados (matriz de covarianza) y otra con datos estandarizados (matriz de correlación). Por eso, \"sin "
   "estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada.")
-P("<b>Predicción con splines cúbicos (3.7).</b> Se usó la serie anual de la mortalidad infantil de México del Banco Mundial [13]. "
+P("<b>Predicción con splines cúbicos (3.7).</b> Se usó la serie anual de la mortalidad infantil de México del Banco Mundial [12]. "
   "Solo los años múltiplos de cinco (de 1990 a 2020) se tomaron como nodos del spline cúbico natural de la sección 2.3; los demás "
   "años se reservaron para comparar la predicción con el dato real.")
 
@@ -1166,7 +1166,7 @@ menos = lambda t: t.replace("-", "−")
 P("La base de países corresponde a un solo momento, así que con ella no se puede seguir una variable en el tiempo. Para predecir "
   "una variable en cierto año tomamos la que más pesa en el análisis, la mortalidad infantil (es la variable con mayor carga en "
   f"la CP1 y la más asociada con las demás), y un país, México, que ya usamos como ejemplo en la sección 3.5.6. La serie anual "
-  f"viene del Banco Mundial [13] y va de {_nod[0][0]} a {_st['anio_extra']}. En la base de países, México aparece con "
+  f"viene del Banco Mundial [12] y va de {_nod[0][0]} a {_st['anio_extra']}. En la base de países, México aparece con "
   f"{_st['dato_base']:.2f} muertes por cada 1000 nacimientos.")
 P(f"<b>Procedimiento.</b> Supusimos que solo se conoce el dato cada cinco años: los {len(_nod)} nodos son "
   f"{', '.join(str(a) for a, _ in _nod[:-1])} y {_nod[-1][0]}. Con ellos construimos el spline cúbico natural de la sección 2.3 "
@@ -1294,11 +1294,10 @@ for ref in [
     "[7] Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <i>Computing in Science &amp; Engineering</i>, 9(3), 90–95.",
     "[8] Waskom, M. L. (2021). seaborn: statistical data visualization. <i>Journal of Open Source Software</i>, 6(60), 3021.",
     "[9] Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research</i>, 12, 2825–2830.",
-    "[10] Guttman, L. (1954). Some necessary conditions for common-factor analysis. <i>Psychometrika</i>, 19(2), 149–161.",
-    "[11] Virtanen, P. et al. (2020). SciPy 1.0: fundamental algorithms for scientific computing in Python. <i>Nature "
+    "[10] Virtanen, P. et al. (2020). SciPy 1.0: fundamental algorithms for scientific computing in Python. <i>Nature "
     "Methods</i>, 17, 261–272.",
-    "[12] Burden, R. L. y Faires, J. D. (2011). <i>Numerical Analysis</i> (9.ª ed.). Brooks/Cole, Cengage Learning.",
-    "[13] Banco Mundial. <i>Indicadores del desarrollo mundial: tasa de mortalidad infantil (por cada 1000 nacidos vivos), "
+    "[11] Burden, R. L. y Faires, J. D. (2011). <i>Numerical Analysis</i> (9.ª ed.). Brooks/Cole, Cengage Learning.",
+    "[12] Banco Mundial. <i>Indicadores del desarrollo mundial: tasa de mortalidad infantil (por cada 1000 nacidos vivos), "
     "México</i>, indicador SP.DYN.IMRT.IN. https://data.worldbank.org/indicator/SP.DYN.IMRT.IN?locations=MX (consultado en "
     "noviembre de 2026).",
 ]:
