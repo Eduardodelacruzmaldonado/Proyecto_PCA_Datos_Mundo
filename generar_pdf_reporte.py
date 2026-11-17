@@ -147,11 +147,11 @@ def H3(texto):
 
 # Numeración automática de figuras y tablas en el orden en que aparecen
 ORDEN_FIG = (["categoricas", "faltantes", "imputacion", "log"] + [f"hb_{i:02d}" for i in range(len(estad))]
-             + ["atipicos", "cov", "corr", "comparacion", "vec_pares", "relaciones", "scree", "cargas",
-                "biplot", "recon", "cp1", "planos", "spline_tiempo"])
+             + ["atipicos", "cov", "corr", "comparacion", "vec_pares", "scree", "cargas",
+                "biplot", "recon", "cp1", "planos", "spline_pib", "rendimientos"])
 F = {k: i + 1 for i, k in enumerate(ORDEN_FIG)}
 ORDEN_TAB = ["variables", "descartadas", "imputacion", "descriptivas", "cov_completa", "covarianza", "atipicos", "pares", "menos",
-             "eig_pares", "clasificacion", "valores", "recon", "rango", "comparacion", "spline_coef", "spline_pred"]
+             "eig_pares", "valores", "recon", "rango", "comparacion", "spline_coef", "spline_pred"]
 T = {k: i + 1 for i, k in enumerate(ORDEN_TAB)}
 
 
@@ -279,16 +279,17 @@ story.append(PageBreak())
 val_z, prop_z, acum_z = R["val_z"], R["prop_z"], R["acum_z"]
 k = R["k"]
 story.append(Paragraph("Resumen", h1))
-P(f"Analizamos {R['n_paises']} países descritos por {R['n_columnas']} variables demográficas, económicas y geográficas "
-  "(<i>Countries of the World</i>, Kaggle) para saber si se pueden resumir en pocas componentes principales (PCA). Antes depuramos "
-  "la base: descartamos variables redundantes, eliminamos tres territorios, estimamos los vacíos por interpolación y aplicamos "
-  "logaritmo a las variables muy asimétricas. Después obtuvimos gráficas, medidas descriptivas, valores atípicos y las matrices de "
-  "covarianza y correlación, y aplicamos el PCA con y sin estandarización, eligiendo el número de componentes con el criterio de "
-  f"Kaiser. Con datos estandarizados, cuatro componentes explican {100 * acum_z[k - 1]:.1f} % de la varianza y la primera "
-  f"({100 * prop_z[0]:.1f} %) funciona como un eje de nivel de desarrollo. Sin estandarizar, la primera explica "
-  f"{100 * R['prop_s'][0]:.2f} % pero solo refleja el PIB per cápita, por lo que estandarizar es necesario. También probamos que un "
-  f"spline cúbico predice la mortalidad infantil de México en años intermedios con un error de "
-  f"{R['spline_tiempo']['rmse']['spline']:.2f} muertes por cada 1000 nacimientos.")
+P(f"Se realiza un análisis exploratorio de {R['n_paises']} países descritos por {R['n_columnas']} variables demográficas, "
+  "económicas y geográficas (<i>Countries of the World</i>, Kaggle) para saber si pueden resumirse en pocas componentes "
+  "principales (PCA). Se depuró la base (variables redundantes descartadas, tres territorios eliminados, vacíos estimados por "
+  "interpolación y logaritmo en las variables muy asimétricas) y se obtuvieron gráficas, medidas descriptivas, valores atípicos y "
+  "matrices de covarianza y correlación. Luego se aplicó el PCA con y sin estandarización y se eligió el número de componentes "
+  f"con el criterio de Kaiser. Con datos estandarizados, cuatro componentes explican "
+  f"{100 * acum_z[k - 1]:.1f} % de la varianza y la primera ({100 * prop_z[0]:.1f} %) funciona como un eje de nivel de desarrollo; "
+  f"sin estandarizar, la primera explica {100 * R['prop_s'][0]:.2f} % pero solo refleja el PIB per cápita, por lo que estandarizar "
+  "es indispensable. Además, un spline cúbico construido con los países predijo la mortalidad infantil a partir del PIB per "
+  f"cápita en países que no se usaron para construirlo, con un error {100 * (1 - R['spline_pib']['rmse']['spline'] / R['spline_pib']['rmse']['media']):.0f} % "
+  "menor que sin usar el PIB.")
 P("<b>Palabras clave:</b> análisis exploratorio, componentes principales, estandarización, correlación, interpolación, splines "
   "cúbicos, indicadores de países.",
   ParagraphStyle("pc", fontName="Serif", fontSize=8.5, leading=11))
@@ -311,16 +312,17 @@ story.append(PageBreak())
 # =============================================================================================
 H1("1. Introducción")
 H2("1.1 Objetivo e hipótesis de trabajo")
-P("El objetivo de este trabajo es hacer un análisis exploratorio del conjunto de datos <i>Countries of the World</i> [1] y, una "
-  "vez depurada la base, determinar si los indicadores demográficos, económicos y geográficos de los países pueden resumirse en "
-  "unas pocas componentes principales sin perder demasiada información. Seguimos el flujo visto en clase: datos, exploración "
-  "(gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), corrección de los datos y reducción de "
-  "dimensiones con PCA.")
+P("El objetivo de este trabajo es realizar un análisis exploratorio del conjunto de datos <i>Countries of the World</i> [1], "
+  "con la base ya depurada, determinar si los indicadores demográficos, económicos y geográficos de los países pueden "
+  "resumirse en unas pocas componentes principales sin perder demasiada información. El análisis sigue el siguiente flujo "
+  "planteado: datos, exploración (gráficas, preprocesamiento, correlaciones, medidas descriptivas y valores atípicos), "
+  "corrección de los datos y reducción de dimensiones con PCA.")
 P("Partimos de dos hipótesis, que se retoman en la Discusión (sección 4). <b>H1:</b> muchas variables miden en el fondo el nivel "
   "de desarrollo de un país (salud, ingreso, educación, estructura económica), por lo que estarán fuertemente correlacionadas y "
-  "unas pocas componentes bastarán para resumir buena parte de la varianza. <b>H2:</b> como las variables están en unidades muy "
-  "distintas, el PCA sin estandarizar quedará dominado por la variable de mayor escala, mientras que con estandarización sí "
-  "resumirá la estructura de los datos.")
+  "unas pocas componentes bastarán para resumir buena parte de la varianza. <b>H2:</b> la relación entre la infraestructura de "
+  "un país y su bienestar no es proporcional: las primeras mejoras (por ejemplo, las primeras líneas telefónicas por habitante) "
+  "van acompañadas de saltos grandes en alfabetización, en salud infantil y en la estructura económica, y después el efecto se "
+  "agota, de modo que entre los países mejor equipados esas variables casi no cambian.")
 H2("1.2 Justificación y antecedentes")
 P("Los países se describen con decenas de indicadores y varios de ellos dicen casi lo mismo. Resumirlos en pocas dimensiones "
   "permite comparar países, visualizarlos en un plano y usar menos variables en modelos posteriores.")
@@ -366,14 +368,15 @@ figura("fig_categoricas.png", 431, f"Distribución de las dos variables categór
 P(f"La región con más países es {REG_ES[regs[0][0]]} ({regs[0][1]}), seguida de {REG_ES[regs[1][0]]} ({regs[1][1]}); "
   f"{REG_ES[regs[-1][0]]} ({regs[-1][1]}) es la más pequeña. En clima, el tipo {clima_max} concentra {clima[clima_max]} países.")
 H2("1.4 Herramientas y métodos") # 1.4
-P("Todo el análisis se hizo en Python con estos paquetes: pandas [5] (lectura del CSV con <i>read_csv</i>, medianas por grupos "
-  "con <i>qcut</i> y <i>groupby</i>, y los métodos <i>mean, median, var, std, skew, cov</i> y <i>corr</i>); NumPy [6] "
+P("Todo el análisis se hizo en Python con estos paquetes: pandas (lectura del CSV con <i>read_csv</i>, medianas por grupos "
+  "con <i>qcut</i> y <i>groupby</i>, y los métodos <i>mean, median, var, std, skew, cov</i> y <i>corr</i>); NumPy "
   "(matriz de covarianza con <i>numpy.cov</i>, valores y vectores propios con <i>numpy.linalg.eigh</i>, solución del sistema del "
   "spline con <i>numpy.linalg.solve</i> y <i>log10</i>); "
-  "Matplotlib [7] y seaborn [8] (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy [10] (valor crítico de la "
-  "correlación y comprobación del spline cúbico con <i>CubicSpline</i>) y scikit-learn [9], cuya clase <i>PCA</i> usamos solo "
+  "Matplotlib y seaborn (histogramas, diagramas de caja, dispersión y mapas de calor); SciPy (valor crítico de la "
+  "correlación y comprobación del spline cúbico con <i>CubicSpline</i>) y scikit-learn, cuya clase <i>PCA</i> usamos solo "
   "para verificar nuestro cálculo. El código completo, con el cálculo de cada tabla y de cada figura, está explicado en el "
-  "notebook <i>analisis_pca.ipynb</i> del repositorio del proyecto.")
+  "notebook <i>analisis_pca.ipynb</i> del repositorio del proyecto, y el notebook <i>analisis_pca_reporte.ipynb</i> es una "
+  "versión autocontenida que calcula y muestra todo sin escribir archivos.")
 H3("1.4.1 Medidas descriptivas y covarianza")
 P("La media, la varianza y la covarianza de dos variables X e Y medidas en <i>n</i> países son:")
 F_MEDIA = r"$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i\qquad\qquad s^2(X)=\frac{\sum_{i=1}^{n}(x_i-\bar{x})^2}{n-1}$"
@@ -532,7 +535,11 @@ P(f"A los demás países les faltan {sum(c for _, c in imp)} valores: {', '.join
   f"{n_(imp[3][0])} ({imp[3][1]}) y uno o dos valores en otras variables. El caso más grande, {n_(imp[0][0])}, representa "
   f"{100 * imp[0][1] / R['n_depurados']:.1f} % de los países. No los rellenamos con la mediana, porque la mediana asigna el mismo "
   "número a todos los países de un grupo sin tomar en cuenta lo que sí se sabe de cada uno. En su lugar, estimamos cada vacío por "
-  "interpolación a partir de otra variable del mismo país, que llamamos variable predictora.")
+  "interpolación lineal a partir de otra variable del mismo país, que llamamos variable predictora.")
+P("<b>Variable predictora.</b> Para cada variable con vacíos usamos como predictora la variable con mayor correlación de Pearson "
+  "en valor absoluto (sección 1.4.2), calculada con los países que tienen ambos datos: mientras más fuerte es la relación entre "
+  f"dos variables, mejor se puede estimar una a partir de la otra. La Tabla {T['imputacion']} muestra la predictora de cada "
+  "variable.")
 P("<b>Nodos.</b> Sean <i>x</i> la variable predictora e <i>y</i> la variable con vacíos. No se puede interpolar directamente entre "
   "países, porque dos países con casi el mismo valor de <i>x</i> pueden tener valores de <i>y</i> muy distintos y la curva oscilaría "
   f"de un punto a otro. Por eso primero resumimos la relación en pocos nodos: los países que tienen ambos datos se ordenan por "
@@ -544,66 +551,30 @@ P("<b>Nodos.</b> Sean <i>x</i> la variable predictora e <i>y</i> la variable con
 P("<b>Interpolación lineal.</b> Une cada par de nodos consecutivos con una recta. Para un país cuyo valor <i>x</i> está entre "
   "<i>x<sub>j</sub></i> y <i>x</i><sub><i>j</i>+1</sub>, el valor estimado es:")
 formula("interp_lineal", r"$L_j(x)=y_j+\dfrac{y_{j+1}-y_j}{x_{j+1}-x_j}\,(x-x_j)$", 12)
-P("<b>Spline cúbico natural [11].</b> En lugar de rectas usa un polinomio de grado 3 en cada intervalo, de modo que la curva "
-  "completa es suave. En el intervalo [<i>x<sub>j</sub></i>, <i>x</i><sub><i>j</i>+1</sub>], con <i>j</i> = 0, …, <i>n</i> − 1:")
-formula("spline_def", r"$S_j(x)=a_j+b_j\,(x-x_j)+c_j\,(x-x_j)^2+d_j\,(x-x_j)^3$", 12)
-P("Hay 4<i>n</i> coeficientes por determinar, y se les piden 4<i>n</i> condiciones: que cada polinomio pase por sus dos nodos "
-  "(2<i>n</i> condiciones), que la primera y la segunda derivadas de polinomios vecinos coincidan en los nodos interiores "
-  "(2(<i>n</i> − 1) condiciones) y que la segunda derivada valga cero en los dos extremos, que es lo que hace natural al spline "
-  "(2 condiciones):")
-formula("spline_cond", r"$S_j(x_j)=y_j,\quad S_j(x_{j+1})=y_{j+1},\quad S_j'(x_{j+1})=S_{j+1}'(x_{j+1}),\quad "
-                       r"S_j''(x_{j+1})=S_{j+1}''(x_{j+1}),\quad S_0''(x_0)=S_{n-1}''(x_n)=0$", 11)
-P("El desarrollo es el siguiente, con <i>h<sub>j</sub></i> = <i>x</i><sub><i>j</i>+1</sub> − <i>x<sub>j</sub></i>. De "
-  "<i>S<sub>j</sub></i>(<i>x<sub>j</sub></i>) = <i>y<sub>j</sub></i> se obtiene directamente <i>a<sub>j</sub></i> = "
-  "<i>y<sub>j</sub></i>. La segunda derivada es <i>S<sub>j</sub></i>''(<i>x</i>) = 2<i>c<sub>j</sub></i> + "
-  "6<i>d<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>), así que la continuidad de la segunda derivada da "
-  "<i>c</i><sub><i>j</i>+1</sub> = <i>c<sub>j</sub></i> + 3<i>d<sub>j</sub>h<sub>j</sub></i>, de donde se despeja "
-  "<i>d<sub>j</sub></i>. Al sustituir <i>a<sub>j</sub></i> y <i>d<sub>j</sub></i> en la condición "
-  "<i>S<sub>j</sub></i>(<i>x</i><sub><i>j</i>+1</sub>) = <i>y</i><sub><i>j</i>+1</sub> se despeja <i>b<sub>j</sub></i>:")
-formula("spline_bd", r"$d_j=\dfrac{c_{j+1}-c_j}{3\,h_j}\qquad\qquad b_j=\dfrac{y_{j+1}-y_j}{h_j}-\dfrac{h_j}{3}\,(2\,c_j+c_{j+1})$", 12)
-P("Falta la continuidad de la primera derivada, <i>S<sub>j</sub></i>'(<i>x</i>) = <i>b<sub>j</sub></i> + "
-  "2<i>c<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>) + 3<i>d<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>)², que da "
-  "<i>b</i><sub><i>j</i>+1</sub> = <i>b<sub>j</sub></i> + <i>h<sub>j</sub></i>(<i>c<sub>j</sub></i> + "
-  "<i>c</i><sub><i>j</i>+1</sub>). Al sustituir en ella la expresión de <i>b<sub>j</sub></i> queda una ecuación por cada nodo "
-  "interior (<i>j</i> = 1, …, <i>n</i> − 1) en la que solo aparecen las <i>c</i>:")
-formula("spline_sistema", r"$h_{j-1}\,c_{j-1}+2\,(h_{j-1}+h_j)\,c_j+h_j\,c_{j+1}=3\left(\dfrac{y_{j+1}-y_j}{h_j}-\dfrac{y_j-y_{j-1}}{h_{j-1}}\right)"
-                          r",\qquad c_0=c_n=0$", 12)
-P("Es un sistema de ecuaciones lineales tridiagonal (cada ecuación solo relaciona tres incógnitas vecinas) y de diagonal "
-  "estrictamente dominante, por lo que tiene solución única. Lo resolvemos con <i>numpy.linalg.solve</i>; con las "
-  "<i>c<sub>j</sub></i> se calculan <i>b<sub>j</sub></i> y <i>d<sub>j</sub></i> con las fórmulas anteriores, y el valor estimado "
-  "para un país es <i>S<sub>j</sub></i>(<i>x</i>) en el intervalo que contiene a su <i>x</i>. Comprobamos que nuestro spline "
-  "coincide con el de <i>scipy.interpolate.CubicSpline</i>.")
-P("<b>Elección de la variable predictora y del método.</b> Para saber qué se ajusta mejor a cada variable usamos validación "
-  "cruzada: se ocultan valores que sí se conocen (una décima parte de los países a la vez), se estiman con los nodos calculados "
-  "con el resto y se mide el error con la raíz del error cuadrático medio (RMSE). Lo repetimos con cada una de las otras "
-  f"{p_ - 1} variables como predictora y con los dos métodos, y nos quedamos con la combinación de menor error. La mediana "
-  f"regional se evaluó de la misma forma, solo como referencia (Figura {F['imputacion']} y Tabla {T['imputacion']}).")
-figura("fig_imputacion.png", ANCHO, "Nodos (puntos negros), interpolación lineal y spline cúbico de las tres variables con más "
-       "vacíos frente a su variable predictora. Los rombos rojos son los valores imputados.", "imputacion")
 _vi = R["imputacion"]
-_met = {"lineal": "Lineal", "cubico": "Spline cúbico"}
-filas = [["Variable", "Vacíos", "Variable predictora", "Método elegido", "RMSE lineal", "RMSE spline", "RMSE mediana regional"]]
+filas = [["Variable", "Vacíos", "Variable predictora", "r"]]
 for v, d in _vi.items():
-    filas.append([N(v), d["n"], N(d["predictora"]), _met[d["metodo"]], num(d["rmse_lineal"]), num(d["rmse_cubico"]),
-                  num(d["rmse_mediana"])])
-tabla("imputacion", "Validación cruzada de la imputación. El RMSE está en las unidades de cada variable; un valor menor "
-      "indica una mejor estimación.", filas, [96, 36, 100, 68, 54, 54, 60])
+    filas.append([N(v), d["n"], N(d["predictora"]), f"{d['r']:+.2f}".replace("-", "−")])
+tabla("imputacion", "Variable predictora de cada variable con vacíos: la de mayor correlación de Pearson en valor absoluto, "
+      "calculada con los países que tienen ambos datos.", filas, [140, 50, 160, 60])
+figura("fig_imputacion.png", ANCHO, "Nodos (puntos negros) e interpolación lineal de las tres variables con más vacíos frente a "
+       "su variable predictora. Los rombos rojos son los valores imputados.", "imputacion")
 _tres = [v for v, _ in imp[:3]]
-_peor = [v for v, d in _vi.items() if d["mejora"] < 0]
-_cub = [v for v, d in _vi.items() if d["metodo"] == "cubico"]
-P(f"En las tres variables con más vacíos la variable predictora elegida fue {n_(_vi[_tres[0]]['predictora'])}, y la "
-  f"interpolación redujo el error de la mediana regional en {_vi[_tres[0]]['mejora']:.0f} % ({n_(_tres[0])}), "
-  f"{_vi[_tres[1]]['mejora']:.0f} % ({n_(_tres[1])}) y {_vi[_tres[2]]['mejora']:.0f} % ({n_(_tres[2])}). La Figura "
-  f"{F['imputacion']} muestra por qué: la relación no es una recta (la alfabetización se satura cerca de 100 % y la agricultura "
-  "cae muy rápido al principio), y los nodos siguen esa forma. Los dos métodos dan errores casi iguales porque pasan por los "
-  f"mismos nodos; el spline cúbico resultó mejor en {lista([n_(v) for v in _cub])} y la interpolación lineal en las demás, donde "
-  "el cambio brusco de pendiente puede hacer que el polinomio cúbico se curve de más entre nodos. En cada variable usamos el de menor "
-  "error."
-  + (f" La excepción es {lista([n_(v) for v in _peor])}, donde ninguna predictora mejora a la mediana regional; como solo le "
-     f"faltan {_vi[_peor[0]]['n']} valores, mantuvimos el mismo procedimiento para todas las variables." if _peor else ""))
+_debil = [v for v, d in _vi.items() if abs(d["r"]) < 0.3]
+P(f"En las tres variables con más vacíos las predictoras son {n_(_vi[_tres[0]]['predictora'])} para {n_(_tres[0])} "
+  f"(<i>r</i> = {_vi[_tres[0]]['r']:.2f}), {n_(_vi[_tres[1]]['predictora'])} para {n_(_tres[1])} ({_vi[_tres[1]]['r']:.2f}) y "
+  f"{n_(_vi[_tres[2]]['predictora'])} para {n_(_tres[2])} ({_vi[_tres[2]]['r']:.2f}). La Figura {F['imputacion']} muestra que "
+  "esas relaciones no son rectas: la alfabetización casi no cambia mientras la natalidad es baja y cae rápido cuando pasa de 25 "
+  "nacimientos por cada 1000 habitantes, y los servicios suben rápido con los primeros teléfonos. Como cada tramo entre nodos "
+  "tiene su propia pendiente, la interpolación sigue esa forma, algo que no haría una sola recta de regresión."
+  .replace("-", "−")
+  + (f" En {lista([n_(v) for v in _debil])} la mejor predictora apenas tiene |<i>r</i>| = "
+     f"{abs(_vi[_debil[0]]['r']):.2f}, así que el valor estimado es poco más que un valor típico; como solo se estimó "
+     f"{'un valor' if _vi[_debil[0]]['n'] == 1 else str(_vi[_debil[0]]['n']) + ' valores'}, su efecto en el análisis es mínimo."
+     if _debil else ""))
 P("Tres cuidados adicionales: el valor estimado se limita al intervalo de valores observados de la variable (por ejemplo, la "
   "alfabetización no puede pasar de 100); fuera del intervalo de los nodos no se extrapola, sino que se usa el nodo del extremo; "
-  f"y si a un país también le falta la variable predictora elegida, se usa la siguiente mejor (ocurrió en "
+  f"y si a un país también le falta la variable predictora, se usa la siguiente más correlacionada (ocurrió en "
   f"{R['imputacion_otras']} de los {sum(c for _, c in imp)} valores).")
 H2("2.4 Transformación de variables muy asimétricas")
 P("Los resultados de la sección 3.1 muestran que algunas variables "
@@ -635,8 +606,7 @@ P(f"<b>Medidas descriptivas, covarianza y atípicos. (3.2)</b> Se calcularon sob
   f"× {p_} variables), antes de transformar, con <i>mean, median, var, std</i> y <i>cov</i>. Los atípicos se contaron con el "
   "criterio del RIC (Rango Intercuartílico) antes y después de la transformación logarítmica.")
 P(f"<b>Correlaciones (3.4).</b> Se calcularon sobre la base transformada ({R['n_depurados']} × {p_}) con "
-  "<i>corr(method=\"pearson\")</i>. La selección de las variables más y menos correlacionadas usa criterios explícitos. La clasificación en variables independientes y dependientes se hizo a partir del significado de cada variable y de su "
-  "mayor correlación con las demás.")
+  "<i>corr(method=\"pearson\")</i>. La selección de las variables más y menos correlacionadas usa criterios explícitos.")
 
 P("<b>PCA (3.5).</b> Se aplicó a la base transformada y estandarizada. Calculamos la matriz de covarianza, extrajimos valores y "
   "vectores propios con <i>numpy.linalg.eigh</i> y los ordenamos de mayor a menor. Verificamos el cálculo con <i>sklearn.decomposition.PCA</i> "
@@ -649,9 +619,9 @@ P("<b>Reconstrucción (3.5.6).</b> Con las puntuaciones <i>T</i> y los vectores 
 P("<b>Comparación con y sin estandarización (3.6).</b> Se repite el mismo cálculo sobre la misma base transformada, una vez con los "
   "datos solo centrados (matriz de covarianza) y otra con datos estandarizados (matriz de correlación). Por eso, \"sin "
   "estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada.")
-P("<b>Predicción con splines cúbicos (3.7).</b> Se usó la serie anual de la mortalidad infantil de México del Banco Mundial [12]. "
-  "Solo los años múltiplos de cinco (de 1990 a 2020) se tomaron como nodos del spline cúbico natural de la sección 2.3; los demás "
-  "años se reservaron para comparar la predicción con el dato real.")
+P("<b>Predicción con splines cúbicos (3.7).</b> Se usaron el PIB per cápita y la mortalidad infantil de la base depurada, solo "
+  "con valores observados. El 20 % de los países, elegidos al azar con una semilla fija, se reservó para comparar la predicción "
+  "con su valor real; con el resto se formaron los nodos del spline cúbico natural que se describe en esa sección.")
 
 # =============================================================================================
 # 3. RESULTADOS
@@ -693,7 +663,11 @@ DESCRIP = {
     "Service": "Es la más simétrica de todas, sin valores atípicos.",
 }
 for _, fila in estad.iterrows():
-    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]}", fila["archivo"][:-4])
+    atip = int(fila["atip"])
+    atip_txt = f"{atip} valor atípico" if atip == 1 else f"{atip} valores atípicos"
+    figura(fila["archivo"], ANCHO, f"{fila['nombre']}. {DESCRIP[fila['var']]} Asimetría {fila['asim']:.1f}; media de "
+                                   f"{num(fila['media'])} frente a la mediana {num(fila['mediana'])}; {atip_txt} por el criterio "
+                                   "del rango intercuartílico.", fila["archivo"][:-4])
 asim = estad.set_index("var")["asim"]
 muy_asim = asim[asim.abs() >= 3].sort_values(ascending=False)
 P("En conjunto, casi todas las variables tienen asimetría positiva (la media es mayor que la mediana). Las más asimétricas son "
@@ -931,43 +905,6 @@ P("En resumen, las variables muy correlacionadas tienen un valor propio dominant
   "las trece variables, y decidir cuántas conservar puede ser más difícil de lo que aparenta en un inicio (sección 3.5.3).")
 
 
-# 3.4.5 ---------------------------------------------------------------------------------------------------------
-H3("3.4.5 Variables independientes y dependientes")
-P("Para separar variables que actúan como punto de partida de las que parecen depender de otras, usamos el sentido que "
-  "tiene cada variable (una característica física del territorio no depende del ingreso de un país; la mortalidad infantil sí puede "
-  "depender de él) y qué tan fuerte es su correlación con las demás. La Tabla "
-  f"{T['clasificacion']} resume la clasificación junto con la mayor correlación de cada variable.")
-PAPEL = {
-    "Pop. Density (per sq. mi.)": ("Independiente", "Es una condición de partida (población entre superficie)."),
-    "Coastline (coast/area ratio)": ("Independiente", "Es una característica geográfica fija."),
-    "Net migration": ("Dependiente (débil)", "Responde a condiciones económicas, pero su relación lineal es baja."),
-    "Infant mortality (per 1000 births)": ("Dependiente", "Resultado de la salud y el ingreso; muy ligada a la natalidad."),
-    "GDP ($ per capita)": ("Dependiente", "Se mueve con la infraestructura (teléfonos) y la educación."),
-    "Literacy (%)": ("Dependiente", "Resultado de la educación, relacionada con el desarrollo."),
-    "Phones (per 1000)": ("Dependiente", "Indicador de infraestructura que acompaña al ingreso."),
-    "Arable (%)": ("Independiente", "Depende del suelo y del clima, no del ingreso."),
-    "Crops (%)": ("Independiente", "Depende del suelo y del clima."),
-    "Birthrate": ("Dependiente", "Cambia con el nivel de desarrollo y educación."),
-    "Deathrate": ("Dependiente", "Depende de la edad de la población y de la salud."),
-    "Agriculture": ("Dependiente", "Su peso disminuye al crecer la economía."),
-    "Service": ("Dependiente", "Su peso aumenta al crecer la economía."),
-}
-mc = R["mayor_corr"]
-filas = [["Variable", "Papel", "Justificación", "Mayor |r| (con)"]]
-filas += [[N(v), PAPEL[v][0], PAPEL[v][1], f"{mc[v][0]:.2f} ({N(mc[v][1])})"] for v in VARS]
-tabla("clasificacion", "Clasificación de las variables según su papel y mayor correlación con otra variable.", filas,
-      [108, 82, 168, 110])
-ind = [mc[v][0] for v in VARS if PAPEL[v][0] == "Independiente"]
-dep = [mc[v][0] for v in VARS if PAPEL[v][0] == "Dependiente"]
-P(f"Las cuatro variables que clasificamos como independientes tienen correlaciones máximas bajas (entre {min(ind):.2f} y "
-  f"{max(ind):.2f}), lo que es coherente con que no las determine el resto. Las dependientes forman el bloque con correlaciones de "
-  f"{min(dep):.2f} a {max(dep):.2f}. La correlación no demuestra causalidad, de modo que la clasificación puede ser una "
-  "hipótesis razonable: por ejemplo, el PIB y los teléfonos pueden influirse mutuamente. Si más adelante se quisiera ajustar un "
-  "modelo, buenas variables respuesta serían el PIB per cápita o la mortalidad infantil, explicadas con las condiciones geográficas "
-  "y demográficas.")
-figura("fig_relaciones.png", ANCHO, "Tres relaciones entre variables dependientes, con su recta de ajuste y su coeficiente de "
-                                    "correlación.", "relaciones")
-
 # 3.4 -------------------------------------------------------------------------------------------------------
 H2("3.5 Componentes principales (PCA)")
 H3("3.5.1 Qué ventaja ofrece el PCA")
@@ -1061,8 +998,8 @@ figura("fig_biplot.png", 445, "Países en el plano de CP1 y CP2, coloreados por 
 mg = R["media_grupo_cp1"]
 P("Las regiones se ordenan sobre la CP1 como cabría esperar. Las puntuaciones medias son: "
   f"{', '.join(f'{g} {m:.2f}' for g, m in list(mg.items())[:-1])} y {list(mg)[-1]} {list(mg.values())[-1]:.2f}. Los puntos más "
-  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}. Que las componentes, construidas solo "
-  "con números, reproduzcan la geografía del desarrollo sugiere que recogen algo real y no ruido.")
+  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}. Que una variable "
+  "reproduzca la geografía del desarrollo sugiere que las componentes recogen algo real y no ruido.")
 
 H3("3.5.6 Regresar a la matriz original: reconstrucción con k componentes")
 P("Una forma de juzgar la reducción es volver de las componentes a la matriz de datos y comparar con la original. Reconstruimos la "
@@ -1116,7 +1053,7 @@ for _i, _pais in enumerate(_rp["paises"]):
         filas.append([_nom[_pais] if _j == 0 else "", N(_var), num(_rp["original"][_i][_j]), num(_rp["k2"][_i][_j]), num(_rp["k4"][_i][_j])])
 tabla("recon", "Valores originales y reconstruidos con 2 y 4 componentes para tres países (escala original).", filas,
       [80, 130, 80, 80, 80])
-P(f"La reconstrucción de México con cuatro componentes sale bien (PIB per cápita de {_rp['k4'][0][0]:,.0f} contra "
+P(f"La reconstrucción de México con cuatro componentes es razonable (PIB per cápita de {_rp['k4'][0][0]:,.0f} contra "
   f"{_rp['original'][0][0]:,.0f} reales). Los extremos "
   "muestran el límite del método: para Alemania, la mortalidad infantil reconstruida con dos componentes es negativa, y para Níger el "
   "PIB per cápita sale negativo con dos y con cuatro componentes. El PCA es lineal y no sabe que estas variables no pueden ser "
@@ -1156,127 +1093,220 @@ P(f"Al estandarizar, cada variable tiene varianza 1 y la información se reparte
   "eje de desarrollo, pero la versión estandarizada incorpora la información social y demográfica que la otra descarta.")
 # 3.7 ---------------------------------------------------------------------------------------------------------
 H2("3.7 Predicción con splines cúbicos")
-_st = R["spline_tiempo"]
-_nod = _st["nodos"]
-_int = {int(a): v for a, v in _st["intermedios"].items()}
-_ab, _jb = _st["anio_base"], _st["j_base"]
-_cb = _st["coef"][_jb]
-_dt = _ab - _nod[_jb][0]
+_sp = R["spline_pib"]
+_nod = _sp["nodos"]
+_pr = _sp["prueba"]
+_mx = _sp["mexico"]
+_der = {int(k_): v for k_, v in _sp["derivada"].items()}
 menos = lambda t: t.replace("-", "−")
-P("La base de países corresponde a un solo momento, así que con ella no se puede seguir una variable en el tiempo. Para predecir "
-  "una variable en cierto año tomamos la que más pesa en el análisis, la mortalidad infantil (es la variable con mayor carga en "
-  f"la CP1 y la más asociada con las demás), y un país, México, que ya usamos como ejemplo en la sección 3.5.6. La serie anual "
-  f"viene del Banco Mundial [12] y va de {_nod[0][0]} a {_st['anio_extra']}. En la base de países, México aparece con "
-  f"{_st['dato_base']:.2f} muertes por cada 1000 nacimientos.")
-P(f"<b>Procedimiento.</b> Supusimos que solo se conoce el dato cada cinco años: los {len(_nod)} nodos son "
-  f"{', '.join(str(a) for a, _ in _nod[:-1])} y {_nod[-1][0]}. Con ellos construimos el spline cúbico natural de la sección 2.3 "
-  f"(ahora la variable <i>x</i> es el año <i>t</i>), que queda formado por {len(_nod) - 1} polinomios de grado 3, uno por cada "
-  f"intervalo de cinco años (Tabla {T['spline_coef']}). Los {len(_int)} años intermedios no se usaron para construirlo, de modo "
-  "que sirven para comparar la predicción con el dato real. Como referencia calculamos también la interpolación lineal entre "
-  "los mismos nodos.")
-filas = [["Intervalo", "a", "b", "c", "d"]]
-for (a0, _), (a1, _), co in zip(_nod[:-1], _nod[1:], _st["coef"]):
-    filas.append([f"{a0}–{a1}", f"{co[0]:.1f}", menos(f"{co[1]:.4f}"), menos(f"{0.0 if abs(co[2]) < 5e-7 else co[2]:.5f}"),
-                  menos(f"{co[3]:.6f}")])
-tabla("spline_coef", "Coeficientes del spline cúbico natural de la mortalidad infantil de México: en cada intervalo, "
-      "<i>S<sub>j</sub></i>(<i>t</i>) = <i>a</i> + <i>b</i>(<i>t</i> − <i>t<sub>j</sub></i>) + <i>c</i>(<i>t</i> − "
-      "<i>t<sub>j</sub></i>)² + <i>d</i>(<i>t</i> − <i>t<sub>j</sub></i>)³, donde <i>t<sub>j</sub></i> es el primer año del intervalo.",
-      filas, [90, 70, 80, 80, 80])
-P(f"<b>Predicción para {_ab}.</b> Elegimos {_ab} porque es, aproximadamente, el año al que corresponde la base de países. Ese año "
-  f"está en el intervalo {_nod[_jb][0]}–{_nod[_jb + 1][0]}, así que <i>t</i> − <i>t<sub>j</sub></i> = {_dt} y la predicción es:")
-formula("spline_ejemplo", rf"$S({_ab})={_cb[0]:.1f}{_cb[1]:+.4f}\,({_dt}){_cb[2]:+.5f}\,({_dt})^2{_cb[3]:+.6f}\,({_dt})^3={_st['pred_base']:.2f}$", 12)
-P(f"El dato real del Banco Mundial para {_ab} es {_st['real_base']:.1f}, de modo que el error es de "
-  f"{abs(_st['pred_base'] - _st['real_base']):.2f} muertes por cada 1000 nacimientos. El valor de la base de países "
-  f"({_st['dato_base']:.2f}) es algo mayor que ambos porque viene de otra fuente, con su propio método de estimación; lo que "
-  "interesa aquí es que el spline reproduce el dato de la serie con la que se construyó.")
-figura("fig_spline_tiempo.png", ANCHO, "Izquierda: mortalidad infantil de México, nodos cada cinco años, spline cúbico natural e "
-       "interpolación lineal. Derecha: error de cada método en los años que no son nodo.", "spline_tiempo")
-_sel = [a for a in (1992, 1997, 2002, _ab, 2008, 2012, 2017) if a in _int]
-filas = [["Año", "Dato real", "Spline cúbico", "Error del spline", "Interpolación lineal", "Error lineal"]]
-for a in _sel:
-    r_, s_, l_ = _int[a]
-    filas.append([a, f"{r_:.1f}", f"{s_:.2f}", menos(f"{s_ - r_:+.2f}"), f"{l_:.2f}", menos(f"{l_ - r_:+.2f}")])
-tabla("spline_pred", "Predicción de algunos años intermedios con el spline cúbico y con la interpolación lineal (muertes por "
-      "cada 1000 nacimientos).", filas, [50, 70, 80, 84, 100, 76])
-P(f"<b>Resultado.</b> En los {len(_int)} años intermedios, el error (RMSE) del spline es de {_st['rmse']['spline']:.2f} y el de la "
-  f"interpolación lineal de {_st['rmse']['lineal']:.2f}, unas {_st['rmse']['lineal'] / _st['rmse']['spline']:.0f} veces mayor; el "
-  f"peor caso del spline es {_st['peor'][0]}, con {_st['peor'][1]:.2f}, frente a {_st['max']['lineal']:.2f} de la interpolación "
-  f"lineal (Figura {F['spline_tiempo']} y Tabla {T['spline_pred']}). La razón está en la forma de la serie: la mortalidad infantil "
-  "baja cada vez más despacio, así que la curva es convexa y las rectas que unen los nodos tienden a quedar por encima de ella; "
-  "por eso los errores de la interpolación lineal son casi siempre positivos. El spline, al exigir que la pendiente y la curvatura "
-  "sean continuas en los nodos, sigue esa curvatura.")
-P(f"<b>Fuera de los nodos.</b> También probamos {_st['anio_extra']}, que está después del último nodo. Ahí ya no se interpola: se "
-  f"prolonga el último polinomio, que da {_st['pred_extra']:.2f} frente al dato real de {_st['real_extra']:.1f}. El resultado es "
-  "bueno porque son solo tres años y la serie es muy regular, pero un polinomio cúbico prolongado no tiene nada que lo "
-  "contenga y puede alejarse mucho de los datos, de modo que el spline sirve para predecir dentro del intervalo de los nodos y "
-  "solo con cautela un poco más allá.")
+
+
+def cientifico(x, dec=3):
+    """Número en notación científica para las tablas: 1.234 × 10^-5."""
+    if abs(x) < 1e-15:                                          # cero salvo error de redondeo
+        return "0"
+    m, e = f"{x:.{dec}e}".split("e")
+    return menos(f"{m} × 10<super>{int(e)}</super>") if int(e) != 0 else menos(f"{float(m):.{dec}f}")
+
+
+def tex_cientifico(x, dec=3):
+    m, e = f"{x:.{dec}e}".split("e")
+    return f"{float(m):+.{dec}f}" + (rf"\times 10^{{{int(e)}}}" if int(e) != 0 else "")
+
+
+P("La base de países corresponde a un solo momento, así que no permite seguir una variable en el tiempo. En cambio, sí permite "
+  "predecir a través de los países: un spline cúbico aprende cómo cambia una variable a lo largo de otra y, con esa curva, se "
+  "estima el valor de un país que no se usó para construirla. Predecimos la mortalidad infantil, que es la variable con mayor "
+  "carga en la CP1 y la más asociada con las demás, a partir del PIB per cápita, que resume el ingreso de cada país. Además, la "
+  "forma de esta curva sirve para examinar la H2 con otra variable de desarrollo.")
+P(f"<b>Procedimiento.</b> Tomamos los {_sp['n_entren'] + _sp['n_prueba']} países que tienen ambos datos observados (sin valores "
+  f"imputados) y separamos al azar, con una semilla fija, {_sp['n_prueba']} de ellos (20 %): son los países de prueba, que no se "
+  f"usan para construir la curva. Con los {_sp['n_entren']} restantes formamos {len(_nod)} nodos igual que en la sección 2.3: los "
+  "países se ordenan por PIB, se dividen en grupos del mismo tamaño y cada grupo aporta la mediana de su PIB y la mediana de su "
+  f"mortalidad infantil. Por esos nodos pasa un spline cúbico natural (Tabla {T['spline_coef']}), y como referencia calculamos "
+  "también la interpolación lineal entre los mismos nodos (la fórmula de la sección 2.3).")
+P("<b>Spline cúbico natural [5].</b> En lugar de unir los nodos con rectas, usa un polinomio de grado 3 en cada intervalo, de "
+  "modo que la curva completa es suave. Escribimos el desarrollo con una variable general <i>x</i>, que aquí es el PIB per cápita. En el intervalo [<i>x<sub>j</sub></i>, <i>x</i><sub><i>j</i>+1</sub>], con <i>j</i> = 0, …, <i>n</i> − 1:")
+formula("spline_def", r"$S_j(x)=a_j+b_j\,(x-x_j)+c_j\,(x-x_j)^2+d_j\,(x-x_j)^3$", 12)
+P("Hay 4<i>n</i> coeficientes por determinar, y se les piden 4<i>n</i> condiciones: que cada polinomio pase por sus dos nodos "
+  "(2<i>n</i> condiciones), que la primera y la segunda derivadas de polinomios vecinos coincidan en los nodos interiores "
+  "(2(<i>n</i> − 1) condiciones) y que la segunda derivada valga cero en los dos extremos, que es lo que hace natural al spline "
+  "(2 condiciones):")
+formula("spline_cond", r"$S_j(x_j)=y_j,\quad S_j(x_{j+1})=y_{j+1},\quad S_j'(x_{j+1})=S_{j+1}'(x_{j+1}),\quad "
+                       r"S_j''(x_{j+1})=S_{j+1}''(x_{j+1}),\quad S_0''(x_0)=S_{n-1}''(x_n)=0$", 11)
+P("El desarrollo es el siguiente, con <i>h<sub>j</sub></i> = <i>x</i><sub><i>j</i>+1</sub> − <i>x<sub>j</sub></i>. De "
+  "<i>S<sub>j</sub></i>(<i>x<sub>j</sub></i>) = <i>y<sub>j</sub></i> se obtiene directamente <i>a<sub>j</sub></i> = "
+  "<i>y<sub>j</sub></i>. La segunda derivada es <i>S<sub>j</sub></i>''(<i>x</i>) = 2<i>c<sub>j</sub></i> + "
+  "6<i>d<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>), así que la continuidad de la segunda derivada da "
+  "<i>c</i><sub><i>j</i>+1</sub> = <i>c<sub>j</sub></i> + 3<i>d<sub>j</sub>h<sub>j</sub></i>, de donde se despeja "
+  "<i>d<sub>j</sub></i>. Al sustituir <i>a<sub>j</sub></i> y <i>d<sub>j</sub></i> en la condición "
+  "<i>S<sub>j</sub></i>(<i>x</i><sub><i>j</i>+1</sub>) = <i>y</i><sub><i>j</i>+1</sub> se despeja <i>b<sub>j</sub></i>:")
+formula("spline_bd", r"$d_j=\dfrac{c_{j+1}-c_j}{3\,h_j}\qquad\qquad b_j=\dfrac{y_{j+1}-y_j}{h_j}-\dfrac{h_j}{3}\,(2\,c_j+c_{j+1})$", 12)
+P("Falta la continuidad de la primera derivada, <i>S<sub>j</sub></i>'(<i>x</i>) = <i>b<sub>j</sub></i> + "
+  "2<i>c<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>) + 3<i>d<sub>j</sub></i>(<i>x</i> − <i>x<sub>j</sub></i>)², que da "
+  "<i>b</i><sub><i>j</i>+1</sub> = <i>b<sub>j</sub></i> + <i>h<sub>j</sub></i>(<i>c<sub>j</sub></i> + "
+  "<i>c</i><sub><i>j</i>+1</sub>). Al sustituir en ella la expresión de <i>b<sub>j</sub></i> queda una ecuación por cada nodo "
+  "interior (<i>j</i> = 1, …, <i>n</i> − 1) en la que solo aparecen las <i>c</i>:")
+formula("spline_sistema", r"$h_{j-1}\,c_{j-1}+2\,(h_{j-1}+h_j)\,c_j+h_j\,c_{j+1}=3\left(\dfrac{y_{j+1}-y_j}{h_j}-\dfrac{y_j-y_{j-1}}{h_{j-1}}\right)"
+                          r",\qquad c_0=c_n=0$", 12)
+P("Es un sistema de ecuaciones lineales tridiagonal (cada ecuación solo relaciona tres incógnitas vecinas) y de diagonal "
+  "estrictamente dominante, por lo que tiene solución única. Lo resolvemos con <i>numpy.linalg.solve</i>; con las "
+  "<i>c<sub>j</sub></i> se calculan <i>b<sub>j</sub></i> y <i>d<sub>j</sub></i> con las fórmulas anteriores, y el valor predicho "
+  "para un país es <i>S<sub>j</sub></i>(<i>x</i>) en el intervalo que contiene a su PIB. Comprobamos que nuestro spline "
+  "coincide con el de <i>scipy.interpolate.CubicSpline</i>.")
+filas = [["Intervalo de PIB (USD)", "a", "b", "c", "d"]]
+for (x0, _), (x1, _), co in zip(_nod[:-1], _nod[1:], _sp["coef"]):
+    filas.append([f"{x0:,.0f} – {x1:,.0f}", f"{co[0]:.2f}", cientifico(co[1]), cientifico(co[2]), cientifico(co[3])])
+tabla("spline_coef", "Coeficientes del spline cúbico natural de la mortalidad infantil en función del PIB per cápita: en cada "
+      "intervalo, <i>S<sub>j</sub></i>(<i>x</i>) = <i>a</i> + <i>b</i>(<i>x</i> − <i>x<sub>j</sub></i>) + <i>c</i>(<i>x</i> − "
+      "<i>x<sub>j</sub></i>)² + <i>d</i>(<i>x</i> − <i>x<sub>j</sub></i>)³, donde <i>x<sub>j</sub></i> es el primer valor del "
+      "intervalo.", filas, [118, 60, 96, 96, 96])
+figura("fig_spline_pib.png", ANCHO, "Izquierda: mortalidad infantil frente al PIB per cápita, con los países de entrenamiento "
+       "(gris), los de prueba (azul), los nodos, el spline cúbico natural y la interpolación lineal. Derecha: derivada del spline, es "
+       "decir, cuánto cambia la mortalidad infantil por cada 1,000 dólares de PIB en cada punto de la curva.", "spline_pib")
+_jm = _mx["j"]
+_cm = _sp["coef"][_jm]
+_dx = _mx["pib"] - _nod[_jm][0]
+P(f"<b>Ejemplo: México.</b> México quedó entre los países de prueba, así que su dato no se usó para construir la curva. Su PIB "
+  f"per cápita es de {_mx['pib']:,.0f} dólares, que está en el intervalo {_nod[_jm][0]:,.0f} – {_nod[_jm + 1][0]:,.0f}; entonces "
+  f"<i>x</i> − <i>x<sub>j</sub></i> = {_dx:,.1f} y la predicción es:")
+formula("spline_ejemplo", rf"$S(9000)={_cm[0]:.2f}{tex_cientifico(_cm[1])}\,({_dx:.1f}){tex_cientifico(_cm[2])}\,({_dx:.1f})^2"
+                          rf"{tex_cientifico(_cm[3])}\,({_dx:.1f})^3={_mx['pred']:.2f}$".replace("S(9000)", f"S({_mx['pib']:.0f})"), 11)
+P(f"El valor real de México en la base es {_mx['real']:.2f} muertes por cada 1000 nacimientos, así que el error es de "
+  f"{abs(_mx['pred'] - _mx['real']):.2f}. La Figura {F['spline_pib']} muestra la curva completa junto con los países de "
+  f"entrenamiento y de prueba, y la Tabla {T['spline_pred']} la predicción para algunos países de prueba.")
+_orden = sorted(_pr.items(), key=lambda t: t[1][0])
+_sel = [_orden[round(i * (len(_orden) - 1) / 7)] for i in range(8)]
+if "Mexico" in _pr and all(p_ != "Mexico" for p_, _ in _sel):
+    _sel = sorted(_sel[:-1] + [("Mexico", _pr["Mexico"])], key=lambda t: t[1][0])
+filas = [["País", "PIB per cápita", "Dato real", "Spline cúbico", "Error del spline", "Interpolación lineal", "Error lineal"]]
+for pais, (pib_, real_, spl_, lin_) in _sel:
+    filas.append([pais, f"{pib_:,.0f}", f"{real_:.2f}", f"{spl_:.2f}", menos(f"{spl_ - real_:+.2f}"), f"{lin_:.2f}",
+                  menos(f"{lin_ - real_:+.2f}")])
+tabla("spline_pred", "Predicción de la mortalidad infantil (muertes por cada 1000 nacimientos) de algunos países de prueba, "
+      "ordenados por PIB per cápita.", filas, [86, 66, 54, 64, 70, 72, 56])
+_peor = max(_pr.items(), key=lambda t: abs(t[1][2] - t[1][1]))
+_rm = _sp["rmse"]
+P(f"<b>Resultado.</b> En los {_sp['n_prueba']} países de prueba, la raíz del error cuadrático medio (RMSE) del spline es de "
+  f"{_rm['spline']:.2f} muertes por cada 1000 nacimientos y la de la interpolación lineal de {_rm['lineal']:.2f}. Como referencia, "
+  f"si a todos se les asignara la media de los países de entrenamiento, sin usar su PIB, el error sería de {_rm['media']:.2f}: "
+  f"conocer el PIB reduce el error en {100 * (1 - _rm['spline'] / _rm['media']):.0f} %. Los dos métodos dan casi lo mismo porque "
+  "pasan por los mismos nodos; la ventaja del spline no está en el error, sino en que es una curva suave con derivada continua. "
+  "El error sigue siendo alto porque a un mismo nivel de ingreso hay países con mortalidad infantil muy distinta: el peor caso es "
+  f"{_peor[0]}, con un PIB de {_peor[1][0]:,.0f} dólares, una mortalidad real de {_peor[1][1]:.1f} y una predicción de "
+  f"{_peor[1][2]:.1f}.")
+P("<b>Derivada.</b> Como cada tramo del spline es un polinomio, su derivada tiene una fórmula explícita y dice cuánto cambia la "
+  "mortalidad infantil por cada dólar adicional de PIB en cada punto de la curva:")
+formula("spline_derivada", r"$S_j'(x)=b_j+2\,c_j\,(x-x_j)+3\,d_j\,(x-x_j)^2$", 12)
+_pos = _sp["positiva"]
+P(f"Multiplicada por 1,000, da el cambio por cada 1,000 dólares: {menos(f'{_der[1000]:.1f}')} muertes por cada 1000 nacimientos "
+  f"cuando el PIB es de 1,000 dólares, {menos(f'{_der[5000]:.1f}')} a los 5,000, {menos(f'{_der[10000]:.1f}')} a los 10,000 y "
+  f"prácticamente cero ({menos(f'{_der[20000]:+.2f}')}) a los 20,000. Es decir, los primeros aumentos de ingreso van acompañados "
+  "de una caída muy grande de la mortalidad infantil y después el efecto se agota, lo mismo que plantea la H2 para los teléfonos. "
+  + (f"La derivada no es perfectamente negativa: entre {_pos[0]:,.0f} y {_pos[1]:,.0f} dólares es apenas positiva (como máximo "
+     f"+{_pos[2]:.2f}), porque el spline pasa exactamente por nodos que tienen algo de ruido y se ondula un poco entre ellos; no es "
+     "un aumento real de la mortalidad." if _pos else ""))
+P(f"<b>¿Qué pasaría si el PIB de México se duplicara?</b> Con {2 * _mx['pib']:,.0f} dólares, la curva predice "
+  f"{_mx['pred_doble']:.2f} muertes por cada 1000 nacimientos, frente a {_mx['pred']:.2f} con su PIB actual. Esta lectura es una "
+  "asociación entre países y no una relación de causa: la curva describe cómo son los países con más ingreso, no garantiza lo "
+  f"que ocurriría si un país aumentara el suyo. Además, fuera del intervalo de los nodos ({_nod[0][0]:,.0f} a "
+  f"{_nod[-1][0]:,.0f} dólares) el spline no se usa para extrapolar: se toma el valor del nodo del extremo.")
 
 # =============================================================================================
 # 4. DISCUSIÓN
 # =============================================================================================
 H1("4. Discusión")
 H2("4.1 Comparación con las hipótesis")
-P(f"<b>H1.</b> Se cumplió en general. {R['n_pares_05']} de los {R['n_pares']} pares de variables tienen |r| ≥ 0.5 y las variables de "
-  f"salud, ingreso y educación forman un bloque bien definido. La primera componente ({100 * prop_z[0]:.1f} %) ordena a los países de "
-  f"África a Europa, y la comparación de la sección 3.4.4 lo confirma: las cuatro variables más correlacionadas "
-  f"({lista([n_(v) for v in top4])}) cargan sobre la CP1, mientras que {n_(bottom2[0])} y {n_(bottom2[1])}, las menos "
-  f"correlacionadas, aparecen en componentes posteriores. Aun así, la reducción no es drástica: necesitamos cuatro componentes para "
-  f"llegar a {100 * acum_z[3]:.1f} %, porque las variables geográficas (tierra cultivable, cultivos permanentes y costa) tienen su "
-  "propia estructura y no se resumen en un solo eje.")
-P(f"<b>H2.</b> También se cumplió, y por mucho: sin estandarizar, la CP1 explica {100 * R['prop_s'][0]:.2f} % de la varianza y es "
-  f"casi solo el PIB per cápita; estandarizando explica {100 * prop_z[0]:.1f} % y le dan peso {R['n_cargas_05']} variables.")
+P(f"<b>H1 (las variables miden desarrollo y se pueden resumir).</b> Se cumple en lo esencial. {R['n_pares_05']} de los "
+  f"{R['n_pares']} pares de variables tienen |r| ≥ 0.5 y se forma un bloque claro de desarrollo; la primera componente "
+  f"({100 * prop_z[0]:.1f} %) ordena a las regiones de África a Europa. La comparación de la sección 3.4.4 lo muestra de forma "
+  f"directa: las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}) se condensan en la CP1, mientras que "
+  f"{n_(bottom2[0])} y {n_(bottom2[1])}, las menos correlacionadas, solo aparecen en componentes posteriores. Sin embargo, la "
+  f"reducción es moderada: hacen falta cuatro componentes para llegar a {100 * acum_z[3]:.1f} %. Es decir, los {p_} indicadores no se reducen "
+  "a una sola dimensión, porque las variables geográficas (tierra cultivable, cultivos permanentes, costa) aportan estructura propia.")
+_h2 = R["evidencia_h2"]
+_lit, _agr, _mi = (_h2[v] for v in ("Literacy (%)", "Agriculture", "Infant mortality (per 1000 births)"))
+_nl = _lit["nodos"]
+_veces = [abs(e["pendientes"][0] / e["pendientes"][-1]) for e in _h2.values()]
+P(f"<b>H2 (las mejoras tienen rendimientos decrecientes).</b> Se cumple. Para comprobarla usamos los mismos nodos de la sección "
+  f"2.3: los países se ordenan por número de teléfonos, se dividen en {R['n_nodos']} grupos y entre cada par de nodos consecutivos "
+  f"se calcula la pendiente, es decir, cuánto cambia la variable por cada 100 líneas telefónicas (Figura {F['rendimientos']}). En "
+  f"el primer tramo, de {_nl[0][0]:.0f} a {_nl[1][0]:.0f} teléfonos por cada 1000 habitantes, la alfabetización sube "
+  f"{_nl[1][1] - _nl[0][1]:.1f} puntos (una pendiente de {_lit['pendientes'][0]:.1f} puntos por cada 100 teléfonos); en el "
+  f"último, de {_nl[-2][0]:.0f} a {_nl[-1][0]:.0f} teléfonos, sube apenas {_nl[-1][1] - _nl[-2][1]:.1f} puntos "
+  f"({_lit['pendientes'][-1]:.2f} por cada 100). Lo mismo ocurre con la mortalidad infantil, cuya pendiente pasa de "
+  f"{_mi['pendientes'][0]:.1f} a {_mi['pendientes'][-1]:.2f} muertes por cada 1000 nacimientos, y con el peso de la agricultura "
+  f"en el PIB, que pasa de {100 * _agr['pendientes'][0]:.1f} a {100 * _agr['pendientes'][-1]:.1f} puntos porcentuales: en las "
+  f"tres variables la pendiente del primer tramo es entre {min(_veces):.0f} y {max(_veces):.0f} veces la del último. Es decir, "
+  "la alfabetización se satura cerca de 100 % y la mortalidad infantil y la agricultura bajan muy rápido al principio y después "
+  "casi no cambian.".replace("-", "−"))
+_dp = {int(k_): v for k_, v in R["spline_pib"]["derivada"].items()}
+P(f"El spline de la sección 3.7 lleva la misma idea al ingreso: su derivada indica que, cuando el PIB per cápita es de 1,000 "
+  f"dólares, cada 1,000 dólares adicionales van acompañados de {abs(_dp[1000]):.1f} muertes menos por cada 1000 nacimientos; a los "
+  f"5,000 dólares, de {abs(_dp[5000]):.1f} menos, y a partir de unos 20,000 la mortalidad infantil prácticamente ya no cambia.")
+P(f"Una consecuencia es que la correlación de Pearson, que mide qué tan cerca están los datos de una recta, subestima estas "
+  f"relaciones. Entre teléfonos y alfabetización <i>r</i> = {_lit['r']:.2f}, mientras que la correlación de rangos de Spearman, "
+  f"que solo mide si una variable crece (o decrece) siempre que la otra crece, vale {_lit['spearman']:.2f}; con la mortalidad "
+  f"infantil los valores son {_mi['r']:.2f} y {_mi['spearman']:.2f}, y con la agricultura {_agr['r']:.2f} y "
+  f"{_agr['spearman']:.2f}. Hay que leer el resultado como una asociación: los teléfonos son un indicador de infraestructura que "
+  "acompaña al ingreso, y no necesariamente la causa de los cambios en las otras variables.".replace("-", "−"))
+figura("fig_rendimientos.png", ANCHO, "Alfabetización, peso de la agricultura en el PIB y mortalidad infantil frente al número de "
+       "teléfonos por cada 1000 habitantes, con los nodos (puntos negros) y la interpolación lineal entre ellos. El tramo siena es "
+       "el primero; arriba de cada panel, la pendiente del primer y del último tramo (cambio de la variable por cada 100 "
+       "teléfonos).",
+       "rendimientos")
 H2("4.2 Limitaciones")
-P(f"<b>Sobre los datos.</b> En migración neta, {R['ceros_migracion']} países tienen exactamente cero y es probable que algunos de "
-  "esos ceros sean datos que faltan, lo que debilita su correlación con las demás variables. La información, además, es de mediados "
-  "de la década de 2000, así que las conclusiones describen ese periodo. Los vacíos se estimaron por interpolación con una sola "
-  f"variable predictora; en la más afectada ({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países imputados) el error de "
-  f"validación sigue siendo apreciable, con un RMSE de "
-  f"{min(R['imputacion'][imp[0][0]]['rmse_lineal'], R['imputacion'][imp[0][0]]['rmse_cubico']):.1f} puntos porcentuales.")
-P("<b>Sobre el método.</b> La interpretación de la CP2, la CP3 y la CP4 es nuestra lectura de las cargas. La clasificación en "
-  "variables independientes y dependientes se apoya en correlaciones, que no prueban causalidad, y la correlación de Pearson no capta "
-  "relaciones no lineales como la saturación de la alfabetización. Al regresar a la matriz original con cuatro componentes algunas "
-  "variables se recuperan mal y, en países extremos como Níger, salen valores imposibles (un PIB negativo), porque el PCA es lineal y "
-  "no sabe que ese dato no puede ser negativo.")
-P("<b>Sobre la predicción con splines.</b> Se probó con una sola serie, y además muy suave. Fuera del intervalo de los nodos el "
-  "spline solo prolonga su último polinomio, así que no sirve para extrapolar a muchos años.")
+P(f"Las principales limitaciones del análisis son: (1) en migración neta, {R['ceros_migracion']} países tienen exactamente cero, y es probable que algunos de "
+  "esos ceros sean datos no disponibles, lo que debilita su correlación con las demás variables; (2) la imputación por interpolación "
+  "estima cada vacío con una sola variable predictora y no medimos su error, lo que pesa sobre todo en la variable más afectada "
+  f"({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países imputados); (3) los datos son de mediados de la década de 2000, de modo que las conclusiones describen ese periodo; (4) la "
+  "interpretación de la CP2, CP3 y CP4 es nuestra lectura de las cargas; (5) la selección de las variables más y menos "
+  "correlacionadas usa la correlación de Pearson, que, como muestra la H2, subestima relaciones no lineales como la saturación de "
+  "la alfabetización; (6) al regresar a la matriz original con cuatro componentes algunas variables se recuperan mal y, en países extremos como Níger, aparecen valores imposibles (negativos), porque el PCA es lineal y no sabe que el PIB o la densidad no pueden ser negativos; y (7) la predicción con splines usa una sola variable "
+  "explicativa, el PIB per cápita, y a un mismo nivel de ingreso hay países con mortalidad infantil muy distinta, por lo que su "
+  f"error sigue siendo alto (RMSE de {R['spline_pib']['rmse']['spline']:.1f}); además, describe una asociación entre países y no "
+  "lo que le pasaría a un país si cambiara su ingreso.")
 H2("4.3 Cómo se podría mejorar el análisis")
-P(f"Con más tiempo haríamos varias cosas. Trataríamos los ceros de migración neta como faltantes y repetiríamos el análisis. "
-  f"Imputaríamos cada vacío con varias variables a la vez en lugar de una sola. Repetiríamos el PCA sin los territorios muy pequeños "
-  f"({', '.join(dl[2])}) para ver si cambian las componentes. Compararíamos Pearson con Spearman, que sí capta relaciones monótonas "
-  "no lineales. Y, ya con datos más recientes, usaríamos las componentes como variables explicativas de un modelo para el PIB per "
-  "cápita o la mortalidad infantil.")
+P("Con más tiempo se podría: tratar los ceros de migración neta como faltantes y repetir el análisis; imputar cada vacío con varias variables predictoras a "
+  f"la vez en lugar de una sola; repetir el PCA sin los territorios muy pequeños ({', '.join(dl[2])}) para "
+  "ver si cambian las componentes; usar también la correlación de Spearman, que capta relaciones monótonas no lineales como "
+  "las de la H2, para elegir las variables más y menos correlacionadas; actualizar los datos con fuentes más recientes; y usar las componentes como variables explicativas en un modelo para "
+  "el PIB per cápita o la mortalidad infantil.")
 
 # =============================================================================================
 # 5. CONCLUSIONES
 # =============================================================================================
 H1("5. Conclusiones")
-_mej3 = [R["imputacion"][v]["mejora"] for v, _ in imp[:3]]
-P(f"Partimos de {R['n_paises']} países y {R['n_columnas']} variables y terminamos con {R['n_depurados']} países y {p_} variables "
-  "numéricas. Descartamos las variables categóricas y las redundantes (otros usos del suelo e industria) y explicamos cada decisión. "
-  "Los vacíos que quedaron los estimamos por interpolación, lineal o con spline cúbico según el error de validación de cada "
-  f"variable; en las tres con más vacíos, el error quedó entre {min(_mej3):.0f} % y {max(_mej3):.0f} % por debajo del que da la "
-  "mediana regional. Las tres variables de asimetría extrema las transformamos con logaritmo.")
+P(f"Partimos de {R['n_paises']} países y {R['n_columnas']} variables. Después de la depuración quedaron {R['n_depurados']} países "
+  f"y {p_} variables numéricas; descartamos las variables categóricas y las redundantes (otros usos del suelo, industria) con razones "
+  "explícitas, estimamos los vacíos restantes por interpolación lineal sobre nodos a partir de la variable más correlacionada "
+  "con cada una, y transformamos con logaritmo las tres variables de asimetría extrema.")
 P("Las correlaciones muestran un bloque de variables que describe el nivel de desarrollo (mortalidad infantil, natalidad, "
-  "alfabetización, PIB per cápita, teléfonos, agricultura y servicios) y unas condiciones geográficas (tierra cultivable, cultivos "
-  f"permanentes y costa) que se relacionan poco con él. Las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}, "
+  "alfabetización, PIB per cápita, teléfonos, agricultura y servicios), mientras que las condiciones geográficas (tierra cultivable, "
+  f"cultivos permanentes, costa) se relacionan poco con él. Las cuatro variables más correlacionadas ({lista([n_(v) for v in top4])}, "
   f"con |r| promedio de {R['top4_puntaje']:.2f}) son casi redundantes y se resumen en la primera componente; las dos menos "
-  f"correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) aportan información propia. Por eso tomamos las condiciones geográficas "
-  "como independientes y el bloque de desarrollo como dependiente, con la aclaración de que es una hipótesis y no una prueba de causalidad.")
-P(f"Con datos estandarizados, cuatro componentes explican {100 * acum_z[3]:.1f} % de la varianza. La primera "
-  f"({100 * prop_z[0]:.1f} %) funciona como un eje de desarrollo que ordena a las regiones de forma coherente. Al regresar a la "
-  "matriz original con esas cuatro componentes se recuperan bien las variables de desarrollo (mortalidad infantil, natalidad, "
-  "teléfonos y PIB per cápita), pero no la densidad ni la razón costa/área, y en países extremos la reconstrucción puede dar valores "
-  "imposibles.")
-P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas. Como las variables están en unidades distintas "
-  "(dólares, porcentajes, fracciones y razones), estandarizar es la decisión correcta y es la que usamos para elegir las "
-  "componentes. No estandarizar solo tendría sentido si todas las variables tuvieran la misma unidad y la diferencia de varianzas "
-  "fuera información que se quiere conservar.")
-P(f"Con los datos de mortalidad infantil de México cada cinco años, un spline cúbico natural predijo los "
-  f"{len(_st['intermedios'])} años intermedios con un RMSE de {_st['rmse']['spline']:.2f} muertes por cada 1000 nacimientos, "
-  f"{_st['rmse']['lineal'] / _st['rmse']['spline']:.0f} veces menor que el de la interpolación lineal. Para {_st['anio_base']}, el "
-  f"año aproximado de la base de países, estimó {_st['pred_base']:.2f} frente al dato real de {_st['real_base']:.1f}.")
-P("Los datos son de mediados de los años 2000, así que lo que describimos es la situación de ese periodo. Una extensión natural "
-  "es usar las componentes como predictores del PIB per cápita o de la mortalidad infantil.")
+  f"correlacionadas ({n_(bottom2[0])} y {n_(bottom2[1])}) aportan información propia.")
+P("Las relaciones dentro de ese bloque son monótonas pero no rectas: los primeros aumentos de infraestructura acompañan saltos "
+  "grandes en alfabetización, mortalidad infantil y peso de la agricultura, y entre los países mejor equipados esas variables casi "
+  f"no cambian (en las tres, la pendiente del primer tramo es entre {min(_veces):.0f} y {max(_veces):.0f} veces la del último). "
+  "Esto confirma la H2 y explica por qué la correlación de Pearson subestima la fuerza de estas relaciones.")
+P(f"Con datos estandarizados, cuatro componentes explican {100 * acum_z[3]:.1f} % de la varianza. La primera (el "
+  f"{100 * prop_z[0]:.1f} %) es un eje de desarrollo que ordena a las regiones de forma coherente.")
+P("Al regresar a la matriz original con cuatro componentes se recuperan razonablemente las variables de desarrollo (mortalidad infantil, natalidad, teléfonos, PIB per cápita), pero no las geográficas de colas largas (densidad de población y costa/área); la reconstrucción es una aproximación y puede dar valores imposibles en países extremos.")
+P("Sin estandarizar, el PCA se reduce al PIB por la diferencia de escalas y pierde su utilidad. Las variables de este conjunto "
+  "están en unidades distintas (dólares, porcentajes, fracciones, razones), así que estandarizar es la decisión adecuada y la que "
+  "usamos para elegir las componentes. Solo tendría sentido no estandarizar si todas las variables estuvieran en la misma unidad y "
+  "la diferencia de varianzas fuera información que se quiere conservar, y aquí no es el caso.")
+_sp = R["spline_pib"]
+P(f"El spline cúbico natural construido con {_sp['n_entren']} países predijo la mortalidad infantil de los otros "
+  f"{_sp['n_prueba']} a partir de su PIB per cápita con un error (RMSE) de {_sp['rmse']['spline']:.2f} muertes por cada 1000 "
+  f"nacimientos, {100 * (1 - _sp['rmse']['spline'] / _sp['rmse']['media']):.0f} % menor que sin usar el PIB; para México estimó "
+  f"{_sp['mexico']['pred']:.2f} frente al valor real de {_sp['mexico']['real']:.2f}. Su derivada muestra que la mortalidad "
+  "infantil baja muy rápido con los primeros aumentos de ingreso y casi no cambia en los países más ricos.")
+P("Limitaciones: los datos son de "
+  "mediados de los años 2000; una parte pequeña de los valores es estimada por interpolación; y el cero de migración neta puede "
+  "ser un dato faltante disfrazado. Una extensión natural sería ajustar un modelo para el PIB per cápita o la mortalidad infantil "
+  "usando las componentes como predictores.")
 
 # =============================================================================================
 # 6. BIBLIOGRAFÍA
@@ -1288,18 +1318,7 @@ for ref in [
     "[3] Kaiser, H. F. (1960). The application of electronic computers to factor analysis. <i>Educational and Psychological "
     "Measurement</i>, 20(1), 141–151.",
     "[4] United Nations Development Programme (1990). <i>Human Development Report 1990</i>. Oxford University Press.",
-    "[5] McKinney, W. (2010). Data structures for statistical computing in Python. <i>Proceedings of the 9th Python in Science "
-    "Conference</i>, 51–56.",
-    "[6] Harris, C. R. et al. (2020). Array programming with NumPy. <i>Nature</i>, 585, 357–362.",
-    "[7] Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. <i>Computing in Science &amp; Engineering</i>, 9(3), 90–95.",
-    "[8] Waskom, M. L. (2021). seaborn: statistical data visualization. <i>Journal of Open Source Software</i>, 6(60), 3021.",
-    "[9] Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research</i>, 12, 2825–2830.",
-    "[10] Virtanen, P. et al. (2020). SciPy 1.0: fundamental algorithms for scientific computing in Python. <i>Nature "
-    "Methods</i>, 17, 261–272.",
-    "[11] Burden, R. L. y Faires, J. D. (2011). <i>Numerical Analysis</i> (9.ª ed.). Brooks/Cole, Cengage Learning.",
-    "[12] Banco Mundial. <i>Indicadores del desarrollo mundial: tasa de mortalidad infantil (por cada 1000 nacidos vivos), "
-    "México</i>, indicador SP.DYN.IMRT.IN. https://data.worldbank.org/indicator/SP.DYN.IMRT.IN?locations=MX (consultado en "
-    "noviembre de 2026).",
+    "[5] Burden, R. L. y Faires, J. D. (2011). <i>Numerical Analysis</i> (9.ª ed.). Brooks/Cole, Cengage Learning.",
 ]:
     P(ref, biblio)
 
