@@ -264,7 +264,7 @@ story.append(Table([[""]], colWidths=[ANCHO], style=[("LINEABOVE", (0, 0), (-1, 
 story.append(Spacer(1, 34))
 etq = ParagraphStyle("etq", fontName="Serif-Bold", fontSize=11.5, leading=16)
 val = ParagraphStyle("val", fontName="Serif", fontSize=11.5, leading=16)
-datos_portada = [[Paragraph("Integrantes", etq), Paragraph("De La Cruz Maldonado José Eduardo<br/>López Reyes Jorge", val)],
+datos_portada = [[Paragraph("Integrantes", etq), Paragraph("De La Cruz Maldonado José Eduardo<br/>López Reyes Jorge Armando", val)],
                  [Paragraph("Profesora", etq), Paragraph("Nora Isabel Pérez Quezadas", val)],
                  [Paragraph("Datos", etq), Paragraph("Countries of the World (Kaggle, fernandol)", val)]]
 story.append(Table(datos_portada, colWidths=[108, 336], hAlign="CENTER",
@@ -788,12 +788,6 @@ todos_pares = [(VARS[i], VARS[j], corr.iloc[i, j]) for i in range(p_) for j in r
 fuertes = [(a, b) for a, b, r in todos_pares if abs(r) >= 0.5]
 en_bloque = sum(1 for a, b in fuertes if a in bloque_des and b in bloque_des)
 H3("3.4.3 Variables más y menos relacionadas")
-P(f"Para leer el mapa de calor con más detalle conviene verlo de forma geométrica. Cada variable es un vector de {R['n_depurados']} "
-  "valores, uno por país; si se centran restando su media, el coeficiente de Pearson es el coseno del ángulo que forman los dos "
-  "vectores. Así, |<i>r</i>| cercano a 1 indica vectores casi paralelos (<i>r</i> &gt; 0) u opuestos (<i>r</i> &lt; 0), es decir, "
-  "información repetida, y <i>r</i> cercano a 0 indica vectores casi perpendiculares, que aportan información distinta. Con "
-  f"<i>n</i> = {R['n_depurados']}, una correlación es significativamente distinta de cero al 5 % si |<i>r</i>| &gt; "
-  f"{R['r_crit']:.3f} (prueba <i>t</i> de Pearson); por debajo de ese valor no se puede afirmar que haya relación lineal.")
 P(f"<b>Las más relacionadas.</b> Las relaciones fuertes se concentran en siete variables: {lista([n_(v) for v in bloque_des])}. "
   f"De los {R['n_pares_05']} pares con |<i>r</i>| ≥ 0.5, {en_bloque} están dentro de ese bloque. Para elegir las cuatro variables más "
   f"correlacionadas sin arbitrariedad, evaluamos los {math.comb(p_, 4)} grupos posibles de cuatro variables y elegimos el de mayor "
@@ -1235,16 +1229,13 @@ figura("fig_rendimientos.png", ANCHO, "Alfabetización, peso de la agricultura e
        "teléfonos).",
        "rendimientos")
 H2("4.2 Limitaciones")
-P(f"Las principales limitaciones del análisis son: (1) en migración neta, {R['ceros_migracion']} países tienen exactamente cero, y es probable que algunos de "
-  "esos ceros sean datos no disponibles, lo que debilita su correlación con las demás variables; (2) la imputación por interpolación "
-  "estima cada vacío con una sola variable predictora y no medimos su error, lo que pesa sobre todo en la variable más afectada "
-  f"({n_(imp[0][0])}, con {imp[0][1]} de {R['n_depurados']} países imputados); (3) los datos son de mediados de la década de 2000, de modo que las conclusiones describen ese periodo; (4) la "
-  "interpretación de la CP2, CP3 y CP4 es nuestra lectura de las cargas; (5) la selección de las variables más y menos "
-  "correlacionadas usa la correlación de Pearson, que, como muestra la H2, subestima relaciones no lineales como la saturación de "
-  "la alfabetización; (6) al regresar a la matriz original con cuatro componentes algunas variables se recuperan mal y, en países extremos como Níger, aparecen valores imposibles (negativos), porque el PCA es lineal y no sabe que el PIB o la densidad no pueden ser negativos; y (7) la predicción con splines usa una sola variable "
-  "explicativa, el PIB per cápita, y a un mismo nivel de ingreso hay países con mortalidad infantil muy distinta, por lo que su "
-  f"error sigue siendo alto (RMSE de {R['spline_pib']['rmse']['spline']:.1f}); además, describe una asociación entre países y no "
-  "lo que le pasaría a un país si cambiara su ingreso.")
+P(f"Las principales limitaciones son: (1) {R['ceros_migracion']} países tienen migración neta igual a cero, probablemente "
+  "datos faltantes en algunos casos; (2) la imputación usa una sola variable predictora y no medimos su error, sobre todo en "
+  f"{n_(imp[0][0])} ({imp[0][1]} de {R['n_depurados']} países imputados); (3) los datos son de mediados de la década de 2000; "
+  "(4) la interpretación de la CP2 a la CP4 es nuestra lectura de las cargas; (5) Pearson subestima relaciones no lineales, como "
+  "muestra la H2; (6) la reconstrucción con cuatro componentes recupera mal algunas variables y da valores negativos en países "
+  "extremos como Níger, y (7) el spline usa solo el PIB per cápita, por lo que su error sigue siendo alto (RMSE de "
+  f"{R['spline_pib']['rmse']['spline']:.1f}) y describe una asociación, no un efecto causal.")
 
 # =============================================================================================
 # 5. CONCLUSIONES
