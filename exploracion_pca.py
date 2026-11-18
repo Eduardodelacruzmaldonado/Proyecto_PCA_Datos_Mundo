@@ -847,8 +847,9 @@ fig.tight_layout(); guardar(fig, "fig_planos.png")
 # natural aprende cómo cambia la **mortalidad infantil** a lo largo del **PIB per cápita** y con esa curva se
 # predice la mortalidad infantil de países que no se usaron para construirla.
 #
-# 1. Se separan al azar (semilla fija) el 20 % de los países con ambos datos observados: son los países de
-#    prueba. Con el 80 % restante se construye la curva.
+# 1. Se apartan 8 países de prueba con distintos niveles de PIB (Yemen, Togo, Saint Helena, Jamaica,
+#    Namibia, México, Letonia y Jersey). Con los demás países que tienen ambos datos observados se
+#    construye la curva.
 # 2. Los países de entrenamiento se ordenan por PIB y se dividen en 8 grupos; cada grupo aporta un nodo
 #    (mediana del PIB, mediana de la mortalidad infantil), como en la sección 2.3.
 # 3. Por los nodos pasa un spline cúbico natural, que se obtiene resolviendo el sistema tridiagonal de sus
@@ -902,7 +903,9 @@ def derivada(xn, yn, x):
 from scipy.interpolate import CubicSpline
 X_SP, Y_SP = "GDP ($ per capita)", "Infant mortality (per 1000 births)"
 base_sp = observados[[X_SP, Y_SP]].dropna()                     # solo valores observados (sin imputar)
-es_prueba = np.random.default_rng(0).permutation(len(base_sp)) < round(.2 * len(base_sp))
+PAISES_PRUEBA = ["Yemen", "Togo", "Saint Helena", "Jamaica", "Namibia", "Mexico", "Latvia", "Jersey"]
+assert all(p in base_sp.index for p in PAISES_PRUEBA)
+es_prueba = base_sp.index.isin(PAISES_PRUEBA)
 entren, prueba = base_sp[~es_prueba], base_sp[es_prueba]
 xn_p, yn_p = nodos(entren[X_SP], entren[Y_SP])
 a_p, b_p, c_p, d_p = spline_natural(xn_p, yn_p)

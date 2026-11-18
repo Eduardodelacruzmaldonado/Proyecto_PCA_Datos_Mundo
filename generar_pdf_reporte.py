@@ -290,9 +290,6 @@ P(f"Se realiza un análisis exploratorio de {R['n_paises']} países descritos po
   "es indispensable. Además, un spline cúbico construido con los países predijo la mortalidad infantil a partir del PIB per "
   f"cápita en países que no se usaron para construirlo, con un error {100 * (1 - R['spline_pib']['rmse']['spline'] / R['spline_pib']['rmse']['media']):.0f} % "
   "menor que sin usar el PIB.")
-P("<b>Palabras clave:</b> análisis exploratorio, componentes principales, estandarización, correlación, interpolación, splines "
-  "cúbicos, indicadores de países.",
-  ParagraphStyle("pc", fontName="Serif", fontSize=8.5, leading=11))
 story.append(PageBreak())
 
 # Índice ----------------------------------------------------------------------------------------------
@@ -434,8 +431,7 @@ _pib = "GDP ($ per capita)"
 _c11 = R["cargas"][_pib][0]
 P("La primera dice que los cuadrados de las cargas de una componente suman su valor propio (porque el vector propio tiene norma "
   "1), y la segunda que los cuadrados de las cargas de una variable en todas las componentes suman 1 (porque <i>R</i> = "
-  "<i>V</i> Λ <i>V</i><super>T</super> y su diagonal vale 1). Por eso el cuadrado de una carga es la fracción de la varianza de "
-  f"la variable que explica esa componente. Por ejemplo, el PIB per cápita tiene coeficiente {_c11 / R['val_z'][0] ** .5:.3f} en "
+  "<i>V</i> Λ <i>V</i><super>T</super> y su diagonal vale 1). Por ejemplo, el PIB per cápita tiene coeficiente {_c11 / R['val_z'][0] ** .5:.3f} en "
   f"el primer vector propio y λ<sub>1</sub> = {R['val_z'][0]:.3f}, así que su carga es {_c11 / R['val_z'][0] ** .5:.3f} × "
   f"√{R['val_z'][0]:.3f} = {_c11:.2f}: la primera componente explica {100 * _c11 ** 2:.0f} % de su varianza.")
 
@@ -533,8 +529,7 @@ P("Elegimos ese límite por cuatro razones. Primera, es el corte natural de los 
   f"({100 * _con_vacios / R['n_paises']:.1f} %).")
 P(f"A los demás países les faltan {sum(c for _, c in imp)} valores: {', '.join(f'{n_(v)} ({c})' for v, c in imp[:3])}, "
   f"{n_(imp[3][0])} ({imp[3][1]}) y uno o dos valores en otras variables. El caso más grande, {n_(imp[0][0])}, representa "
-  f"{100 * imp[0][1] / R['n_depurados']:.1f} % de los países. No los rellenamos con la mediana, porque la mediana asigna el mismo "
-  "número a todos los países de un grupo sin tomar en cuenta lo que sí se sabe de cada uno. En su lugar, estimamos cada vacío por "
+  f"{100 * imp[0][1] / R['n_depurados']:.1f} % de los países. Estimamos cada vacío por "
   "interpolación lineal a partir de otra variable del mismo país, que llamamos variable predictora.")
 P("<b>Variable predictora.</b> Para cada variable con vacíos usamos como predictora la variable con mayor correlación de Pearson "
   "en valor absoluto (sección 1.4.2), calculada con los países que tienen ambos datos: mientras más fuerte es la relación entre "
@@ -620,8 +615,8 @@ P("<b>Comparación con y sin estandarización (3.6).</b> Se repite el mismo cál
   "datos solo centrados (matriz de covarianza) y otra con datos estandarizados (matriz de correlación). Por eso, \"sin "
   "estandarizar\" significa sin dividir entre la desviación estándar, pero con la transformación logarítmica ya aplicada.")
 P("<b>Predicción con splines cúbicos (3.7).</b> Se usaron el PIB per cápita y la mortalidad infantil de la base depurada, solo "
-  "con valores observados. El 20 % de los países, elegidos al azar con una semilla fija, se reservó para comparar la predicción "
-  "con su valor real; con el resto se formaron los nodos del spline cúbico natural que se describe en esa sección.")
+  "con valores observados. Ocho países con niveles de PIB muy distintos (los de la Tabla 16) se reservaron para comparar la "
+  "predicción con su valor real; con el resto se formaron los nodos del spline cúbico natural que se describe en esa sección.")
 
 # =============================================================================================
 # 3. RESULTADOS
@@ -749,8 +744,7 @@ dens_txt = (f"{tel_max} el mayor número de teléfonos por habitante y también 
 P(f"No eliminamos ningún país por ser atípico. Los casos extremos son valores reales y esperables: {at[pib][2][0]} tiene el PIB per "
   f"cápita más alto de la muestra, {dens_txt}. Quitarlos haría que el estudio dejara fuera justamente a los países que más contrastan. "
   "En su lugar, reducimos su influencia de dos maneras: la transformación logarítmica (que baja los atípicos de densidad de "
-  f"{dl[0]} a {dl[1]}, de costa/área de {cl[0]} a {cl[1]} y de cultivos permanentes de {crl[0]} a {crl[1]}) y la estandarización "
-  "que se discute en la sección 3.6.")
+  f"{dl[0]} a {dl[1]}, de costa/área de {cl[0]} a {cl[1]} y de cultivos permanentes de {crl[0]} a {crl[1]}) y la estandarización.")
 P(f"Un caso aparte es migración neta, con {mig[0]} atípicos. Aquí el criterio engaña: como {R['ceros_migracion']} países tienen "
   "exactamente cero, el rango intercuartílico es muy angosto y valores de apenas unas unidades quedan señalados. La variable va "
   f"solo de {desc.loc['Net migration', 'minimo']:.0f} a {desc.loc['Net migration', 'maximo']:.0f}".replace("-", "−") + ","
@@ -898,11 +892,6 @@ P(f"<b>Las cuatro más correlacionadas.</b> Al tomar juntas las cuatro variables
   "1/√4 = 0.5, positivos para las variables de rezago y negativo para la alfabetización, por lo que la dirección principal es "
   "un promedio de las cuatro y no una de ellas en particular; los vectores siguientes solo describen diferencias pequeñas, como "
   f"lo que distingue a la agricultura del resto (<i>v</i><sub>2</sub>, coeficiente {sg(v4[2][1])}).")
-P("En resumen, las variables muy correlacionadas tienen un valor propio dominante y un vector propio que las combina a todas con "
-  "pesos parecidos, por lo que son redundantes y el PCA las resume en una sola componente; en el PCA de las trece variables, las "
-  "cuatro tienen cargas grandes en la CP1 (sección 3.5.4). Las poco correlacionadas tienen valores propios cercanos a 1: cada una "
-  "conserva información propia que solo aparece en componentes posteriores. Por eso una o dos componentes no bastan para resumir "
-  "las trece variables, y decidir cuántas conservar puede ser más difícil de lo que aparenta en un inicio (sección 3.5.3).")
 
 
 # 3.4 -------------------------------------------------------------------------------------------------------
@@ -998,8 +987,7 @@ figura("fig_biplot.png", 445, "Países en el plano de CP1 y CP2, coloreados por 
 mg = R["media_grupo_cp1"]
 P("Las regiones se ordenan sobre la CP1 como cabría esperar. Las puntuaciones medias son: "
   f"{', '.join(f'{g} {m:.2f}' for g, m in list(mg.items())[:-1])} y {list(mg)[-1]} {list(mg.values())[-1]:.2f}. Los puntos más "
-  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}. Que una variable "
-  "reproduzca la geografía del desarrollo es una señal de que las componentes recogen estructura real y no ruido.")
+  f"altos en la CP1 son {', '.join(R['cp1_altos'])}, y los más bajos {', '.join(R['cp1_bajos'])}.")
 
 H3("3.5.6 Regresar a la matriz original: reconstrucción con k componentes")
 P("Una forma de juzgar la reducción es volver de las componentes a la matriz de datos y comparar con la original. Reconstruimos la "
@@ -1120,8 +1108,8 @@ P("La base de países corresponde a un solo momento, así que no permite seguir 
   "carga en la CP1 y la más asociada con las demás, a partir del PIB per cápita, que resume el ingreso de cada país. Además, la "
   "forma de esta curva sirve para examinar la H2 con otra variable de desarrollo.")
 P(f"<b>Procedimiento.</b> Tomamos los {_sp['n_entren'] + _sp['n_prueba']} países que tienen ambos datos observados (sin valores "
-  f"imputados) y separamos al azar, con una semilla fija, {_sp['n_prueba']} de ellos (20 %): son los países de prueba, que no se "
-  f"usan para construir la curva. Con los {_sp['n_entren']} restantes formamos {len(_nod)} nodos igual que en la sección 2.3: los "
+  f"imputados) y apartamos {_sp['n_prueba']} de ellos como países de prueba, con niveles de PIB per cápita muy distintos: "
+  f"{lista(list(_sp['prueba']))}. Estos países no se usan para construir la curva. Con los {_sp['n_entren']} restantes formamos {len(_nod)} nodos igual que en la sección 2.3: los "
   "países se ordenan por PIB, se dividen en grupos del mismo tamaño y cada grupo aporta la mediana de su PIB y la mediana de su "
   f"mortalidad infantil. Por esos nodos pasa un spline cúbico natural (Tabla {T['spline_coef']}), y como referencia calculamos "
   "también la interpolación lineal entre los mismos nodos (la fórmula de la sección 2.3).")
@@ -1174,16 +1162,13 @@ formula("spline_ejemplo", rf"$S(9000)={_cm[0]:.2f}{tex_cientifico(_cm[1])}\,({_d
                           rf"{tex_cientifico(_cm[3])}\,({_dx:.1f})^3={_mx['pred']:.2f}$".replace("S(9000)", f"S({_mx['pib']:.0f})"), 11)
 P(f"El valor real de México en la base es {_mx['real']:.2f} muertes por cada 1000 nacimientos, así que el error es de "
   f"{abs(_mx['pred'] - _mx['real']):.2f}. La Figura {F['spline_pib']} muestra la curva completa junto con los países de "
-  f"entrenamiento y de prueba, y la Tabla {T['spline_pred']} la predicción para algunos países de prueba.")
-_orden = sorted(_pr.items(), key=lambda t: t[1][0])
-_sel = [_orden[round(i * (len(_orden) - 1) / 7)] for i in range(8)]
-if "Mexico" in _pr and all(p_ != "Mexico" for p_, _ in _sel):
-    _sel = sorted(_sel[:-1] + [("Mexico", _pr["Mexico"])], key=lambda t: t[1][0])
+  f"entrenamiento y de prueba, y la Tabla {T['spline_pred']} la predicción para los {_sp['n_prueba']} países de prueba.")
+_sel = sorted(_pr.items(), key=lambda t: t[1][0])
 filas = [["País", "PIB per cápita", "Dato real", "Spline cúbico", "Error del spline", "Interpolación lineal", "Error lineal"]]
 for pais, (pib_, real_, spl_, lin_) in _sel:
     filas.append([pais, f"{pib_:,.0f}", f"{real_:.2f}", f"{spl_:.2f}", menos(f"{spl_ - real_:+.2f}"), f"{lin_:.2f}",
                   menos(f"{lin_ - real_:+.2f}")])
-tabla("spline_pred", "Predicción de la mortalidad infantil (muertes por cada 1000 nacimientos) de algunos países de prueba, "
+tabla("spline_pred", "Predicción de la mortalidad infantil (muertes por cada 1000 nacimientos) de los países de prueba, "
       "ordenados por PIB per cápita.", filas, [86, 66, 54, 64, 70, 72, 56])
 _peor = max(_pr.items(), key=lambda t: abs(t[1][2] - t[1][1]))
 _rm = _sp["rmse"]
@@ -1241,15 +1226,9 @@ P(f"<b>H2 (las mejoras tienen rendimientos decrecientes).</b> Se cumple. Para co
   "la alfabetización se satura cerca de 100 % y la mortalidad infantil y la agricultura bajan muy rápido al principio y después "
   "casi no cambian.".replace("-", "−"))
 _dp = {int(k_): v for k_, v in R["spline_pib"]["derivada"].items()}
-P(f"El spline de la sección 3.7 lleva la misma idea al ingreso: su derivada indica que, cuando el PIB per cápita es de 1,000 "
+P(f"El spline de la sección 3.7 lleva la misma idea: su derivada indica que, cuando el PIB per cápita es de 1,000 "
   f"dólares, cada 1,000 dólares adicionales van acompañados de {abs(_dp[1000]):.1f} muertes menos por cada 1000 nacimientos; a los "
   f"5,000 dólares, de {abs(_dp[5000]):.1f} menos, y a partir de unos 20,000 la mortalidad infantil prácticamente ya no cambia.")
-P(f"Una consecuencia es que la correlación de Pearson, que mide qué tan cerca están los datos de una recta, subestima estas "
-  f"relaciones. Entre teléfonos y alfabetización <i>r</i> = {_lit['r']:.2f}, mientras que la correlación de rangos de Spearman, "
-  f"que solo mide si una variable crece (o decrece) siempre que la otra crece, vale {_lit['spearman']:.2f}; con la mortalidad "
-  f"infantil los valores son {_mi['r']:.2f} y {_mi['spearman']:.2f}, y con la agricultura {_agr['r']:.2f} y "
-  f"{_agr['spearman']:.2f}. Hay que leer el resultado como una asociación: los teléfonos son un indicador de infraestructura que "
-  "acompaña al ingreso, y no necesariamente la causa de los cambios en las otras variables.".replace("-", "−"))
 figura("fig_rendimientos.png", ANCHO, "Alfabetización, peso de la agricultura en el PIB y mortalidad infantil frente al número de "
        "teléfonos por cada 1000 habitantes, con los nodos (puntos negros) y la interpolación lineal entre ellos. El tramo siena es "
        "el primero; arriba de cada panel, la pendiente del primer y del último tramo (cambio de la variable por cada 100 "
@@ -1266,12 +1245,6 @@ P(f"Las principales limitaciones del análisis son: (1) en migración neta, {R['
   "explicativa, el PIB per cápita, y a un mismo nivel de ingreso hay países con mortalidad infantil muy distinta, por lo que su "
   f"error sigue siendo alto (RMSE de {R['spline_pib']['rmse']['spline']:.1f}); además, describe una asociación entre países y no "
   "lo que le pasaría a un país si cambiara su ingreso.")
-H2("4.3 Cómo se podría mejorar el análisis")
-P("Con más tiempo se podría: tratar los ceros de migración neta como faltantes y repetir el análisis; imputar cada vacío con varias variables predictoras a "
-  f"la vez en lugar de una sola; repetir el PCA sin los territorios muy pequeños ({', '.join(dl[2])}) para "
-  "ver si cambian las componentes; usar también la correlación de Spearman, que capta relaciones monótonas no lineales como "
-  "las de la H2, para elegir las variables más y menos correlacionadas; actualizar los datos con fuentes más recientes; y usar las componentes como variables explicativas en un modelo para "
-  "el PIB per cápita o la mortalidad infantil.")
 
 # =============================================================================================
 # 5. CONCLUSIONES
@@ -1303,10 +1276,6 @@ P(f"El spline cúbico natural construido con {_sp['n_entren']} países predijo l
   f"nacimientos, {100 * (1 - _sp['rmse']['spline'] / _sp['rmse']['media']):.0f} % menor que sin usar el PIB; para México estimó "
   f"{_sp['mexico']['pred']:.2f} frente al valor real de {_sp['mexico']['real']:.2f}. Su derivada muestra que la mortalidad "
   "infantil baja muy rápido con los primeros aumentos de ingreso y casi no cambia en los países más ricos.")
-P("Limitaciones: los datos son de "
-  "mediados de los años 2000; una parte pequeña de los valores es estimada por interpolación; y el cero de migración neta puede "
-  "ser un dato faltante disfrazado. Una extensión natural sería ajustar un modelo para el PIB per cápita o la mortalidad infantil "
-  "usando las componentes como predictores.")
 
 # =============================================================================================
 # 6. BIBLIOGRAFÍA

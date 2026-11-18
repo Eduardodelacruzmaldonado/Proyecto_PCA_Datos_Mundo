@@ -22,7 +22,7 @@ El flujo de trabajo es el planteado en clase:
 4. **PCA.** Valores y vectores propios calculados con `numpy.linalg.eigh` (verificados con scikit-learn). El número de componentes se elige con el criterio de Kaiser (valores propios mayores que 1); con 4 componentes se explica 76.9 % de la varianza.
 5. **Estandarización.** Comparación del PCA con y sin estandarizar: sin estandarizar, la primera componente explica 99.98 % de la varianza porque solo refleja el PIB per cápita.
 6. **Reconstrucción.** Se regresa de las componentes a la matriz original con *k* componentes, se deshacen la estandarización y el logaritmo y se mide el error.
-7. **Predicción con splines cúbicos.** Con los países de la base se construye un spline cúbico natural de la mortalidad infantil en función del PIB per cápita y se predice la de 45 países que no se usaron para construirlo (error 37 % menor que sin usar el PIB). La derivada del spline muestra cuánto cambia la mortalidad por cada 1,000 dólares.
+7. **Predicción con splines cúbicos.** Con los países de la base se construye un spline cúbico natural de la mortalidad infantil en función del PIB per cápita y se predice la de 8 países de prueba con distintos niveles de PIB que no se usaron para construirlo (error 12 % menor que sin usar el PIB). La derivada del spline muestra cuánto cambia la mortalidad por cada 1,000 dólares.
 8. **Hipótesis H2 (rendimientos decrecientes).** Con los mismos nodos se mide cuánto cambian la alfabetización, la mortalidad infantil y el peso de la agricultura por cada 100 teléfonos: en el primer tramo la pendiente es entre 93 y 477 veces la del último.
 
 El reporte no incluye código: todo el código, con su explicación, sus tablas y sus gráficas, está en el notebook `analisis_pca.ipynb`. La copia `analisis_pca_reporte.ipynb` contiene solo el análisis del reporte y lo calcula y muestra todo dentro del notebook, sin crear carpetas ni escribir archivos; solo necesita `datos/countries_of_the_world.csv`.
@@ -39,13 +39,11 @@ El reporte no incluye código: todo el código, con su explicación, sus tablas 
 ├── generar_pdf_reporte.py    # Arma el reporte PDF con los resultados del análisis
 ├── datos/
 │   └── countries_of_the_world.csv
-├── contexto/                 # Fotos del pizarrón, rúbrica del proyecto y contexto adicional
 ├── fuentes/                  # Tipografías Liberation Serif y DejaVu Sans Mono (licencias libres)
 ├── graficas/                 # Gráficas generadas por el análisis (y fórmulas del reporte)
 ├── resultados/               # Tablas y resultados numéricos (CSV y JSON)
 ├── reporte/
 │   └── Proyecto_PCA_Paises.pdf
-├── prompt_usuario.txt
 ├── requirements.txt
 └── README.md
 ```

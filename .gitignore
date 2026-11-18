@@ -1,15 +1,7 @@
-# Archivos temporales de Python y del sistema
 __pycache__/
-*.py[cod]
-*$py.class
-*.tmp
-*.log
-.DS_Store
-Thumbs.db
-
-# Entorno virtual de Python
+*.pyc
 .venv/
 venv/
-
-# Respaldos locales del reporte (no se suben)
-respaldo_reporte_original/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
